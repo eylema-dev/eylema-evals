@@ -1,0 +1,9 @@
+{
+  "format_version": 1,
+  "repository": "eylema-dev/eylema-evals",
+  "role": "reserved",
+  "stage": "documentation",
+  "tooling_version": "0.2.0",
+  "runtime_implemented": false,
+  "license_status": "pending maintainer decision"
+}
