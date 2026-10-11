@@ -23,7 +23,13 @@ def config(stage='implementation', repository='eylema'):
             **({'wasm_packages': ['owned']} if stage == 'implementation' else {})}
 
 
+def initialize_git(root):
+    subprocess.run(['git', 'init', '--quiet', str(root)], check=True)
+    subprocess.run(['git', '-C', str(root), 'remote', 'add', 'origin', 'https://github.com/eylema-dev/eylema.git'], check=True)
+
+
 def fixture(root):
+    if not (root / '.git').exists(): initialize_git(root)
     (root / 'repository.json').write_text(json.dumps(config()))
     (root / 'rust-toolchain.toml').write_text('[toolchain]\nchannel = "1.99.0"\nprofile = "minimal"\ncomponents = ["rustfmt", "clippy"]\ntargets = ["wasm32-unknown-unknown"]\n')
     (root / 'Cargo.toml').write_text('[workspace]\n')
@@ -42,6 +48,32 @@ class RustProfileTests(unittest.TestCase):
         for value in (config(repository='eylema-models'), dict(config(), gate_profile='trust-me'),
                       dict(config('documentation'), runtime_implemented=True)):
             with self.assertRaises(CheckFailure): validate_repository_config(value)
+
+    def test_declared_identity_must_match_ci_and_local_origin(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); initialize_git(root)
+            with patch.dict('check_rust.os.environ', {}, clear=True):
+                rust.validate_identity(root, config())
+                with self.assertRaises(ValueError): rust.validate_identity(root, config(repository='eylema-examples'))
+            with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eylema-dev/eylema-training'}, clear=True):
+                with self.assertRaises(ValueError): rust.validate_identity(root, config())
+            with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eylema-dev/eylema'}, clear=True):
+                rust.validate_identity(root, config())
+
+    def test_all_cargo_compiler_and_runner_overrides_fail_before_execution(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); fixture(root)
+            overrides = ('CARGO_BUILD_RUSTC', 'CARGO_BUILD_RUSTC_WRAPPER', 'CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER',
+                         'CARGO_TARGET_AARCH64_APPLE_DARWIN_RUNNER', 'CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS',
+                         'RUSTC', 'RUSTC_WRAPPER', 'RUSTDOC', 'RUSTFLAGS', 'RUSTC_BOOTSTRAP',
+                         'CARGO_ENCODED_RUSTFLAGS', 'RUSTUP_DIST_SERVER', 'RUSTUP_TOOLCHAIN')
+            with patch('check_rust.platform.system', return_value='Darwin'), patch('check_rust.platform.machine', return_value='arm64'):
+                for key in overrides:
+                    with self.subTest(key=key), patch.dict('check_rust.os.environ', {key: 'fixture-override'}, clear=True), patch('check_rust.run') as run:
+                        with self.assertRaises(ValueError): rust.check(root, provision=True)
+                        run.assert_not_called()
+            with patch.dict('check_rust.os.environ', {'RUST_BACKTRACE': '1', 'CARGO_TERM_COLOR': 'always'}, clear=True):
+                rust.validate_environment()
 
     def test_documentation_sources_and_incomplete_or_wrong_toolchain_fail(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -128,11 +160,11 @@ class RustProfileTests(unittest.TestCase):
 
     def test_docs_skip_and_wrong_host_never_provision(self):
         with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp); (root / 'repository.json').write_text(json.dumps(config('documentation')))
-            with patch('check_rust.run') as run:
+            root = Path(temp); initialize_git(root); (root / 'repository.json').write_text(json.dumps(config('documentation')))
+            with patch.dict('check_rust.os.environ', {}, clear=True), patch('check_rust.run') as run:
                 with contextlib.redirect_stdout(io.StringIO()): rust.check(root, provision=True)
                 run.assert_not_called()
             fixture(root)
-            with patch('check_rust.platform.system', return_value='Linux'), patch('check_rust.run') as run:
+            with patch.dict('check_rust.os.environ', {}, clear=True), patch('check_rust.platform.system', return_value='Linux'), patch('check_rust.run') as run:
                 with self.assertRaises(ValueError): rust.check(root, provision=True)
                 run.assert_not_called()

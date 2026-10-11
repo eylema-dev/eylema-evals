@@ -150,6 +150,7 @@ def validate_workflow(workflow):
         {'name': 'Run stage-aware native and Wasm gates', 'run': 'python tools/check_rust.py --provision'},
     ], 'Rust gate cannot be skipped, replaced or supplied privileged inputs')
     job = workflow["jobs"]["repository-checks"]
+    require(set(job) == {'name', 'runs-on', 'timeout-minutes', 'steps'}, 'Unexpected repository job configuration')
     require(job.get("runs-on") == "ubuntu-24.04" and job.get("timeout-minutes") == 10, "CI needs bounded hosted runner")
     require(not any(k in job for k in ["permissions", "environment", "container", "services", "uses"]), "Unexpected CI trust boundary")
     used = set()
@@ -165,6 +166,10 @@ def validate_workflow(workflow):
             require("${{" not in step["run"], "Pass expressions via environment, never interpolate into shell code")
             commands.append(step["run"])
         require("secrets." not in json.dumps(step), "Public PR CI must not consume secrets")
+        require(not any(k in step for k in ['continue-on-error', 'working-directory', 'shell']), 'Unexpected gate override')
+        if 'env' in step:
+            require(step.get('name') == 'Record environment and revisions'
+                    and step['env'] == {'PR_HEAD_SHA': '${{ github.event.pull_request.head.sha }}'}, 'Unexpected gate environment override')
     require(used == set(ACTIONS), "Missing pinned provisioning actions")
     joined = "\n".join(commands)
     for command in ["--require-hashes", "unittest discover", "tools/check_repository.py", "tools/check_pr.py"]:
@@ -299,6 +304,8 @@ def check(root, event=None):
     names = repository_files(root)
     config = load_json(root / 'repository.json')
     repository = validate_repository_config(config)
+    from check_rust import validate_identity
+    validate_identity(root, config)
     required = ['README.md', 'AGENTS.md', 'CONTRIBUTING.md', 'CONTRIBUTING.tr.md']
     if repository in {'eylema-docs-en', 'eylema-docs-tr'}:
         required += [f'docs/{d}.md' for d in PRODUCT_DOCS]

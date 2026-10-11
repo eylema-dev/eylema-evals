@@ -11,11 +11,31 @@ from pathlib import Path
 TOOLCHAIN = '1.99.0'
 TARGET = 'wasm32-unknown-unknown'
 ROLES = {'eylema-dev/eylema': 'core', 'eylema-dev/eylema-examples': 'examples', 'eylema-dev/eylema-evals': 'evals'}
+REPOSITORIES = {'eylema', 'devguide', '.github', 'eylema-docs-en', 'eylema-docs-tr',
+                'eylema-examples', 'eylema-evals', 'eylema-models', 'eylema-training'}
 
 
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def validate_identity(root, config):
+    identity = config.get('repository')
+    require(identity in {'eylema-dev/' + n for n in REPOSITORIES}, 'Unknown repository identity')
+    actual = os.environ.get('GITHUB_REPOSITORY')
+    require(actual is None or actual == identity, 'Declared repository differs from trusted CI identity')
+    origin = subprocess.run(['git', '-c', 'core.hooksPath=/dev/null', 'remote', 'get-url', 'origin'],
+                            cwd=root, check=True, capture_output=True, text=True, timeout=60).stdout.strip()
+    require(origin in {f'https://github.com/{identity}', f'https://github.com/{identity}.git',
+                       f'git@github.com:{identity}.git'}, 'Declared repository differs from local origin')
+    # Local origin is consistency evidence, not proof of ownership or authorization.
+
+
+def validate_environment():
+    allowed = {'CARGO_HOME', 'CARGO_TERM_COLOR', 'RUSTUP_HOME', 'RUST_BACKTRACE'}
+    require(not any(k.startswith(('CARGO_', 'RUST')) and k not in allowed for k in os.environ),
+            'Cargo/compiler/toolchain environment overrides require a reviewed profile')
 
 
 def validate_toolchain(root):
@@ -61,6 +81,7 @@ def run(root, args, capture=False):
 
 def check(root, provision=False):
     config = json.loads((root / 'repository.json').read_text())
+    validate_identity(root, config)
     require(config.get('tooling_version') == '0.3.0', 'Unreviewed tooling version')
     if config.get('stage') == 'documentation':
         require(config.get('gate_profile') == 'documentation-v1' and config.get('runtime_implemented') is False,
@@ -74,8 +95,7 @@ def check(root, provision=False):
     validate_toolchain(root)
     wasm_packages = validate_wasm_packages(config)
     require(platform.system() == 'Darwin' and platform.machine() == 'arm64', 'Native acceptance requires ARM64 macOS')
-    require(not any(k in os.environ for k in ('RUSTC', 'RUSTC_WRAPPER', 'RUSTC_WORKSPACE_WRAPPER', 'RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'RUSTUP_TOOLCHAIN', 'CARGO_BUILD_TARGET')),
-            'Compiler/environment overrides require a reviewed profile')
+    validate_environment()
     config_dirs = [p / '.cargo' for p in [root, *root.parents]]
     config_dirs.append(Path(os.environ.get('CARGO_HOME', Path.home() / '.cargo')))
     require(not any((p / n).exists() for p in config_dirs for n in ('config', 'config.toml')),
