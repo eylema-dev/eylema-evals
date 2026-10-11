@@ -1,4 +1,4 @@
-"""Offline documentation-stage gates. No application, GPU or model is executed."""
+"""Repository gates; implementation profiles additionally require check_rust.py."""
 import argparse
 import copy
 import hashlib
@@ -129,13 +129,26 @@ def validate_form(form):
 
 
 def validate_workflow(workflow):
+    require(set(workflow) == {'name', 'on', 'permissions', 'concurrency', 'jobs'}, 'Unexpected workflow-level trust boundary')
     require(workflow.get("permissions") == {"contents": "read"}, "Workflow token must only have contents: read")
     events = workflow.get("on", {})
     require(set(events) == {"push", "pull_request", "workflow_dispatch"}, "Unexpected or privileged workflow trigger")
     require(events["push"].get("branches") == ["main"], "Push CI must cover main")
     required_events = {"opened", "synchronize", "reopened", "edited", "ready_for_review"}
     require(set(events["pull_request"].get("types", [])) == required_events, "PR body and head changes must retrigger CI")
-    require(set(workflow.get("jobs", {})) == {"repository-checks"}, "Review new job boundaries before extending CI")
+    require(set(workflow.get("jobs", {})) == {"repository-checks", "rust-checks"}, "Unexpected CI job boundary")
+    rust = workflow['jobs']['rust-checks']
+    require(set(rust) == {'name', 'if', 'runs-on', 'timeout-minutes', 'steps'}, 'Unexpected Rust job configuration')
+    require(rust['name'] == 'rust-checks' and rust['runs-on'] == 'macos-26' and rust['timeout-minutes'] == 20,
+            'Rust CI requires bounded native ARM64 macOS runner')
+    require(rust['if'] == "github.repository == 'eylema-dev/eylema' || github.repository == 'eylema-dev/eylema-examples' || github.repository == 'eylema-dev/eylema-evals'", 'Rust job role mismatch')
+    require(rust['steps'] == [
+        {'name': 'Checkout reviewed revision', 'uses': 'actions/checkout@' + ACTIONS['actions/checkout'],
+         'with': {'fetch-depth': 0, 'persist-credentials': False}},
+        {'name': 'Set up CI Python', 'uses': 'actions/setup-python@' + ACTIONS['actions/setup-python'],
+         'with': {'python-version': '3.14'}},
+        {'name': 'Run stage-aware native and Wasm gates', 'run': 'python tools/check_rust.py --provision'},
+    ], 'Rust gate cannot be skipped, replaced or supplied privileged inputs')
     job = workflow["jobs"]["repository-checks"]
     require(job.get("runs-on") == "ubuntu-24.04" and job.get("timeout-minutes") == 10, "CI needs bounded hosted runner")
     require(not any(k in job for k in ["permissions", "environment", "container", "services", "uses"]), "Unexpected CI trust boundary")
@@ -198,14 +211,15 @@ def verify_translations(root, manifest, write=False):
 
 ROLES = {
     'eylema': 'core', 'eylema-docs-en': 'docs-en', 'eylema-docs-tr': 'docs-tr',
-    'devguide': 'guide', '.github': 'community', 'eylema-examples': 'reserved',
-    'eylema-evals': 'reserved', 'eylema-models': 'reserved', 'eylema-training': 'reserved',
+    'devguide': 'guide', '.github': 'community', 'eylema-examples': 'examples',
+    'eylema-evals': 'evals', 'eylema-models': 'models', 'eylema-training': 'training',
 }
 PRODUCT_DOCS = ('architecture', 'api-reference', 'development-and-operations',
                 'learning-and-training', 'project-structure', 'roadmap')
 SHARED_FILES = {
     'tools/check_repository.py', 'tools/check_pr.py', 'tools/requirements-ci.txt',
     'tools/tests/test_gates.py', '.github/PULL_REQUEST_TEMPLATE.md',
+    'tools/check_rust.py', 'tools/tests/test_rust_gates.py',
     '.github/CODEOWNERS', '.github/copilot-instructions.md', '.github/workflows/ci.yml',
     '.github/ISSUE_TEMPLATE/config.yml', '.github/ISSUE_TEMPLATE/feature.yml',
     '.github/ISSUE_TEMPLATE/bug.yml', '.github/ISSUE_TEMPLATE/architecture.yml',
@@ -216,9 +230,16 @@ def validate_repository_config(config):
     name = config.get('repository', '').removeprefix('eylema-dev/')
     require(config.get('repository') == 'eylema-dev/' + name and name in ROLES, 'Unexpected repository identity')
     require(config.get('format_version') == 1 and config.get('role') == ROLES[name], 'Invalid repository role/version')
-    require(config.get('stage') == 'documentation' and config.get('runtime_implemented') is False,
-            'Replace documentation gates with reviewed implementation gates before changing stage')
-    require(config.get('tooling_version') == '0.2.0', 'Unexpected tooling version')
+    stage = config.get('stage')
+    require(stage in {'documentation', 'implementation'}, 'Unknown source stage')
+    if stage == 'documentation':
+        require(config.get('runtime_implemented') is False and config.get('gate_profile') == 'documentation-v1',
+                'Documentation profile must not claim runtime implementation')
+    else:
+        require(name in {'eylema', 'eylema-examples', 'eylema-evals'}
+                and config.get('runtime_implemented') is True and config.get('gate_profile') == 'rust-v1',
+                'Implementation requires an approved Rust-capable role/profile')
+    require(config.get('tooling_version') == '0.3.0', 'Unexpected tooling version')
     return name
 
 
@@ -234,7 +255,7 @@ def verify_document_coverage(names, manifest):
 
 def verify_vendor(root, manifest):
     require(manifest.get('source_repository') == 'eylema-dev/devguide'
-            and manifest.get('tooling_version') == '0.2.0', 'Unknown shared tooling source')
+            and manifest.get('tooling_version') == '0.3.0', 'Unknown shared tooling source')
     files = manifest.get('files', {})
     require(set(files) == SHARED_FILES, 'Incomplete or unexpected tooling inventory')
     for name, digest in files.items():
@@ -253,9 +274,30 @@ def validate_api(en, tr):
     return len(operations)
 
 
+def validate_source_stage(root, names, config):
+    validate_repository_config(config)
+    sources = [n for n in names if Path(n).suffix == '.rs' or Path(n).name in {'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'rust-toolchain'}]
+    if config['stage'] == 'documentation':
+        require(not sources, 'Documentation profile cannot accept Rust/Cargo sources')
+        return
+    require({'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'tools/check_rust.py'} <= set(names)
+            and any(n.endswith('.rs') for n in sources), 'Incomplete Rust implementation gates/workspace')
+    from check_rust import validate_toolchain
+    validate_toolchain(root)
+    require(not any(n.startswith('.cargo/') for n in names), 'Cargo overrides require a reviewed profile update')
+
+
+def validate_schema_ownership(repository, schemas):
+    required = {'ai-team-protocol/request.schema.json', 'ai-team-protocol/model-set-release.schema.json'}
+    require((repository == 'eylema' and required <= set(schemas)
+             and all(n.startswith('ai-team-protocol/') and '..' not in Path(n).parts for n in schemas))
+            or (repository != 'eylema' and not schemas), 'Machine schemas belong only in core ai-team-protocol')
+
+
 def check(root, event=None):
     names = repository_files(root)
-    repository = validate_repository_config(load_json(root / 'repository.json'))
+    config = load_json(root / 'repository.json')
+    repository = validate_repository_config(config)
     required = ['README.md', 'AGENTS.md', 'CONTRIBUTING.md', 'CONTRIBUTING.tr.md']
     if repository in {'eylema-docs-en', 'eylema-docs-tr'}:
         required += [f'docs/{d}.md' for d in PRODUCT_DOCS]
@@ -278,10 +320,9 @@ def check(root, event=None):
         if path.suffix == ".md":
             errors = local_link_errors(root, name, path.read_text())
             require(not errors, "; ".join(errors))
-    require(not any(Path(n).suffix == ".rs" or Path(n).name == "Cargo.toml" for n in names), "Documentation-only gate cannot accept Rust source; implement EYL-003 Rust CI and replace this guard together")
+    validate_source_stage(root, names, config)
     schemas = [n for n in names if n.endswith(".schema.json")]
-    expected_schemas = {'ai-team-protocol/request.schema.json', 'ai-team-protocol/model-set-release.schema.json'} if repository == 'eylema' else set()
-    require(set(schemas) == expected_schemas, 'Schema ownership changed; machine contracts belong in eylema')
+    validate_schema_ownership(repository, schemas)
     for name in schemas:
         validate_schema(load_json(root / name))
     for name in names:
@@ -315,7 +356,7 @@ def check(root, event=None):
     subprocess.run(["git", "diff", "--check"], cwd=root, check=True)
     print(f"PASS: {repository}: {len(names)} files, {len(schemas)} schemas, {pair_count} local language records, {len(forms)} issue forms")
     print('Cross-repository API/roadmap/translation/link checks run separately in devguide against pinned member commits.')
-    print("Scope: documentation and repository tooling only; Rust/GPU/model execution is NOT RUN")
+    print("Scope: repository/static validation. Rust execution requires separate check_rust.py; GPU/model NOT RUN")
 
 
 def main():

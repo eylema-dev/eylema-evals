@@ -1,0 +1,102 @@
+"""First-party Rust profile runner. Skips docs; never substitutes fixtures for execution."""
+import argparse
+import json
+import os
+import platform
+import subprocess
+import tomllib
+from pathlib import Path
+
+TOOLCHAIN = '1.99.0'
+TARGET = 'wasm32-unknown-unknown'
+ROLES = {'eylema-dev/eylema': 'core', 'eylema-dev/eylema-examples': 'examples', 'eylema-dev/eylema-evals': 'evals'}
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def validate_toolchain(root):
+    value = tomllib.loads((root / 'rust-toolchain.toml').read_text())
+    require(value == {'toolchain': {'channel': TOOLCHAIN, 'profile': 'minimal',
+                                  'components': ['rustfmt', 'clippy'], 'targets': [TARGET]}},
+            'Rust profile requires the exact reviewed toolchain/components/target')
+
+
+def validate_metadata(root, value):
+    root = root.resolve()
+    require(Path(value['workspace_root']).resolve() == root, 'Foreign Cargo workspace')
+    packages = value.get('packages', [])
+    members = value.get('workspace_members', [])
+    require(packages and len(members) == len(set(members))
+            and {p['id'] for p in packages} == set(members), 'External Cargo packages are forbidden in rust-v1')
+    for package in packages:
+        manifest = Path(package['manifest_path']).resolve()
+        require(package.get('source') is None and manifest.is_relative_to(root) and manifest.is_file(),
+                'Every Cargo package must be first-party workspace-local')
+        require(not any(d.get('source') is not None or not d.get('path')
+                        or not Path(d['path']).resolve().is_relative_to(root)
+                        for d in package.get('dependencies', [])), 'External dependency declaration')
+        require(not any(t.get('kind') == ['custom-build'] for t in package.get('targets', [])),
+                'Build scripts require a reviewed profile update')
+
+
+def run(root, args, capture=False):
+    print('RUN:', ' '.join(args), flush=True)
+    result = subprocess.run(args, cwd=root, check=True, text=True, capture_output=capture, timeout=600)
+    return result.stdout if capture else None
+
+
+def check(root, provision=False):
+    config = json.loads((root / 'repository.json').read_text())
+    require(config.get('tooling_version') == '0.3.0', 'Unreviewed tooling version')
+    if config.get('stage') == 'documentation':
+        require(config.get('gate_profile') == 'documentation-v1' and config.get('runtime_implemented') is False,
+                'Invalid documentation stage')
+        require(not any(root.rglob('Cargo.toml')), 'Documentation checkout contains a Cargo workspace')
+        print('SKIPPED: documentation profile; Rust execution not applicable')
+        return
+    require(config.get('stage') == 'implementation' and config.get('gate_profile') == 'rust-v1'
+            and config.get('runtime_implemented') is True
+            and ROLES.get(config.get('repository')) == config.get('role'), 'Unapproved Rust implementation profile')
+    validate_toolchain(root)
+    require(platform.system() == 'Darwin' and platform.machine() == 'arm64', 'Native acceptance requires ARM64 macOS')
+    require(not any(k in os.environ for k in ('RUSTC', 'RUSTC_WRAPPER', 'RUSTC_WORKSPACE_WRAPPER', 'RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'RUSTUP_TOOLCHAIN', 'CARGO_BUILD_TARGET')),
+            'Compiler/environment overrides require a reviewed profile')
+    config_dirs = [p / '.cargo' for p in [root, *root.parents]]
+    config_dirs.append(Path(os.environ.get('CARGO_HOME', Path.home() / '.cargo')))
+    require(not any((p / n).exists() for p in config_dirs for n in ('config', 'config.toml')),
+            'Cargo configuration overrides require a reviewed profile')
+    if provision:
+        run(root, ['rustup', 'toolchain', 'install', TOOLCHAIN, '--profile', 'minimal', '--component', 'rustfmt,clippy', '--target', TARGET])
+    prefix = ['rustup', 'run', TOOLCHAIN]
+    version = run(root, prefix + ['rustc', '--version'], capture=True)
+    require(version.startswith('rustc ' + TOOLCHAIN + ' '), 'Unexpected compiler version')
+    print(version.strip())
+    metadata = json.loads(run(root, prefix + ['cargo', 'metadata', '--locked', '--offline', '--all-features', '--format-version', '1'], capture=True))
+    validate_metadata(root, metadata)
+    for command in [
+        ['fmt', '--all', '--', '--check'],
+        ['clippy', '--workspace', '--all-targets', '--all-features', '--locked', '--offline', '--', '-D', 'warnings'],
+        ['test', '--workspace', '--all-features', '--locked', '--offline'],
+        ['build', '--workspace', '--all-features', '--locked', '--offline'],
+        ['build', '--workspace', '--all-features', '--locked', '--offline', '--target', TARGET],
+    ]:
+        run(root, prefix + ['cargo', *command])
+    print('PASS: native ARM64 fmt/clippy/tests/build, Wasm compilation and workspace dependency inventory')
+    print('Wasm execution, GPU, model and training: NOT RUN. Workspace membership does not prove copied-code provenance.')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--provision', action='store_true')
+    args = parser.parse_args()
+    try:
+        check(Path(__file__).resolve().parents[1], args.provision)
+    except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
+        raise SystemExit(f'FAIL: {error}') from error
+
+
+if __name__ == '__main__':
+    main()
