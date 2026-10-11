@@ -1,0 +1,18 @@
+{
+  "source_repository": "eylema-dev/devguide",
+  "tooling_version": "0.2.0",
+  "files": {
+    "tools/check_repository.py": "3af4d39bff9068f77bed296b6ebbeb310392e99c745206f5f2530c70f409ddff",
+    "tools/check_pr.py": "32ab29c17cf4e26480258041e696b75726a29bb1450d34e82ea5e8a949d48e10",
+    "tools/tests/test_gates.py": "b06e53eec5a009fd2210d5c2c29a46e7e04e2ab6319f170b4b17026a9d12066a",
+    "tools/requirements-ci.txt": "9b1c37be8b85922f42f1a39f46fa5a50baf1b546894e1fd1fda8fdf21474a976",
+    ".github/CODEOWNERS": "42e1221bd2ed67afd27ed96c071322c172c82a0bde09a7565b3c33e64e95eb1b",
+    ".github/PULL_REQUEST_TEMPLATE.md": "2b0b1d0925ac5ee0a3da1ef41815e0d11ce4b5fb9cea7c7e5d0ca6dc53adfc4b",
+    ".github/copilot-instructions.md": "ac0af6bd71f283852a47d5a1aea2d59a77db716eb459648bf7ee22c1b935fcfc",
+    ".github/workflows/ci.yml": "08019e5f9d771e132e331f1750bbd2374262054d3b1c75da2fe2ba216e8a7ce0",
+    ".github/ISSUE_TEMPLATE/bug.yml": "5c1be38018e24cd5f8791071c19e82c456fe6b6461a31b26ebb7ce7b0d727e43",
+    ".github/ISSUE_TEMPLATE/architecture.yml": "e6a5cc9c2f9c6cba7f4755cfb3eb8090377a9ff6f19ebd6bb86bf34f043e1939",
+    ".github/ISSUE_TEMPLATE/config.yml": "7afe7092f90c2511d180dd3fb8e4b1ac61c135683522fc50c75b3bc6cb9e78df",
+    ".github/ISSUE_TEMPLATE/feature.yml": "993658c404410c29dc18f0ba6addd88244ea29b4d457305663a266b0d9971cf3"
+  }
+}

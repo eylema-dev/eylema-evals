@@ -1,0 +1,53 @@
+name: Architecture
+description: Propose a contract or dependency decision
+title: '[Architecture] '
+body:
+- type: markdown
+  attributes:
+    value: Read CONTRIBUTING.md before implementation. Write this issue in English;
+      documentation is available in English and Turkish.
+- type: textarea
+  id: need
+  attributes:
+    label: Decision needed
+    description: Problem, alternatives and tradeoffs.
+  validations:
+    required: true
+- type: textarea
+  id: targets
+  attributes:
+    label: Compatibility and rollout
+    description: Affected contracts/versions, migration, authority, hardware and rollback.
+  validations:
+    required: true
+- type: textarea
+  id: acceptance
+  attributes:
+    label: Acceptance criteria
+    description: Observable scenarios and results; include failure cases.
+  validations:
+    required: true
+- type: textarea
+  id: scope
+  attributes:
+    label: Scope and exclusions
+    description: Affected paths/modules; production dependencies, permissions and
+      data boundaries.
+  validations:
+    required: true
+- type: textarea
+  id: verification
+  attributes:
+    label: Verification plan
+    description: Commands, tests and required hardware; mark unavailable checks not_run.
+  validations:
+    required: true
+- type: checkboxes
+  id: hygiene
+  attributes:
+    label: Submission
+    options:
+    - label: I removed secrets and private data.
+      required: true
+    - label: I understand this issue is a proposal, not execution authority.
+      required: true

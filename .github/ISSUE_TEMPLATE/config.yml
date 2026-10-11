@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+- name: Contribution guide
+  url: https://github.com/eylema-dev/devguide/blob/main/CONTRIBUTING.md
+  about: Read the workflow and current project limits
