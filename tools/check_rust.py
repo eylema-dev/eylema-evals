@@ -25,10 +25,17 @@ def validate_identity(root, config):
     require(identity in {'eylema-dev/' + n for n in REPOSITORIES}, 'Unknown repository identity')
     actual = os.environ.get('GITHUB_REPOSITORY')
     require(actual is None or actual == identity, 'Declared repository differs from trusted CI identity')
-    origin = subprocess.run(['git', '-c', 'core.hooksPath=/dev/null', 'remote', 'get-url', 'origin'],
-                            cwd=root, check=True, capture_output=True, text=True, timeout=60).stdout.strip()
-    require(origin in {f'https://github.com/{identity}', f'https://github.com/{identity}.git',
-                       f'git@github.com:{identity}.git'}, 'Declared repository differs from local origin')
+    def remote(name):
+        return subprocess.run(['git', '-c', 'core.hooksPath=/dev/null', 'remote', 'get-url', name],
+                              cwd=root, check=True, capture_output=True, text=True, timeout=60).stdout.strip()
+    canonical = {f'https://github.com/{identity}', f'https://github.com/{identity}.git',
+                 f'git@github.com:{identity}.git'}
+    origin = remote('origin')
+    if origin not in canonical:
+        name = re.escape(identity.split('/')[1])
+        fork = bool(re.fullmatch(r'https://github\.com/[A-Za-z0-9-]+/' + name + r'(?:\.git)?', origin)
+                    or re.fullmatch(r'git@github\.com:[A-Za-z0-9-]+/' + name + r'\.git', origin))
+        require(fork and remote('upstream') in canonical, 'Fork needs matching name and canonical upstream')
     # Local origin is consistency evidence, not proof of ownership or authorization.
 
 

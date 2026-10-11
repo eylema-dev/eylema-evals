@@ -60,6 +60,18 @@ class RustProfileTests(unittest.TestCase):
             with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eylema-dev/eylema'}, clear=True):
                 rust.validate_identity(root, config())
 
+    def test_local_forks_require_matching_canonical_upstream(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); initialize_git(root)
+            subprocess.run(['git', '-C', str(root), 'remote', 'set-url', 'origin', 'https://github.com/contributor/eylema.git'], check=True)
+            with patch.dict('check_rust.os.environ', {}, clear=True):
+                with self.assertRaises(subprocess.CalledProcessError): rust.validate_identity(root, config())
+                subprocess.run(['git', '-C', str(root), 'remote', 'add', 'upstream', 'https://github.com/eylema-dev/eylema.git'], check=True)
+                rust.validate_identity(root, config())
+                with self.assertRaises(ValueError): rust.validate_identity(root, config(repository='eylema-examples'))
+                subprocess.run(['git', '-C', str(root), 'remote', 'set-url', 'upstream', 'https://github.com/other/eylema.git'], check=True)
+                with self.assertRaises(ValueError): rust.validate_identity(root, config())
+
     def test_all_cargo_compiler_and_runner_overrides_fail_before_execution(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); fixture(root)
