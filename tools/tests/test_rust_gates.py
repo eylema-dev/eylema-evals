@@ -100,6 +100,7 @@ class RustProfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); metadata = fixture(root)
             self.assertEqual(rust.validate_wasm_packages(config()), ['owned'])
+            metadata['packages'][0]['targets'].append({'kind': ['bin']})
             rust.validate_metadata(root, metadata, ['owned'])
             for selection in (None, [], ['owned', 'owned'], ['../escape'], [1]):
                 with self.assertRaises(ValueError): rust.validate_wasm_packages(dict(config(), wasm_packages=selection))
@@ -144,7 +145,7 @@ class RustProfileTests(unittest.TestCase):
                 calls = [c.args[1] for c in run.call_args_list]
                 self.assertEqual([a[4] for a in calls[1:]], ['metadata', 'fmt', 'clippy', 'test', 'build', 'build'])
                 self.assertEqual(calls[-1][-2:], ['--target', rust.TARGET])
-                self.assertIn('--package', calls[-1]); self.assertNotIn('--workspace', calls[-1])
+                self.assertIn('--package', calls[-1]); self.assertIn('--lib', calls[-1]); self.assertNotIn('--workspace', calls[-1])
                 for index in range(len(calls)):
                     count = 0
                     def failure(root, args, capture=False):

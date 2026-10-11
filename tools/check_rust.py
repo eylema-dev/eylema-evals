@@ -117,7 +117,7 @@ def check(root, provision=False):
         run(root, prefix + ['cargo', *command])
     if wasm_packages:
         selection = [arg for package in wasm_packages for arg in ('--package', package)]
-        run(root, prefix + ['cargo', 'build', *selection, '--all-features', '--locked', '--offline', '--target', TARGET])
+        run(root, prefix + ['cargo', 'build', *selection, '--lib', '--all-features', '--locked', '--offline', '--target', TARGET])
         print('PASS: selected portable library Wasm compilation:', ', '.join(wasm_packages))
     else:
         print('NOT_APPLICABLE: reviewed native-only consumer has no Wasm library')
