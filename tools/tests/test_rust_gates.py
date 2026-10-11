@@ -19,7 +19,8 @@ def config(stage='implementation', repository='eylema'):
     roles = {'eylema': 'core', 'eylema-examples': 'examples', 'eylema-evals': 'evals', 'eylema-models': 'models'}
     return {'format_version': 1, 'repository': 'eylema-dev/' + repository, 'role': roles[repository],
             'stage': stage, 'runtime_implemented': stage == 'implementation', 'tooling_version': '0.3.0',
-            'gate_profile': 'rust-v1' if stage == 'implementation' else 'documentation-v1'}
+            'gate_profile': 'rust-v1' if stage == 'implementation' else 'documentation-v1',
+            **({'wasm_packages': ['owned']} if stage == 'implementation' else {})}
 
 
 def fixture(root):
@@ -30,7 +31,7 @@ def fixture(root):
     (root / 'src').mkdir(); (root / 'src/lib.rs').write_text('')
     (root / 'tools').mkdir(); (root / 'tools/check_rust.py').write_text('fixture only')
     return {'workspace_root': str(root), 'workspace_members': ['owned'],
-            'packages': [{'id': 'owned', 'source': None, 'manifest_path': str(root / 'Cargo.toml'),
+            'packages': [{'id': 'owned', 'name': 'owned', 'source': None, 'manifest_path': str(root / 'Cargo.toml'),
                           'dependencies': [], 'targets': [{'kind': ['lib']}]}]}
 
 
@@ -62,6 +63,18 @@ class RustProfileTests(unittest.TestCase):
                               ('eylema', required + ['ai-team-protocol/../escape.schema.json']),
                               ('eylema-models', required), ('devguide', required)]:
             with self.assertRaises(CheckFailure): validate_schema_ownership(repo, schemas)
+
+    def test_wasm_selection_is_explicit_and_bound_to_owned_libraries(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); metadata = fixture(root)
+            self.assertEqual(rust.validate_wasm_packages(config()), ['owned'])
+            rust.validate_metadata(root, metadata, ['owned'])
+            for selection in (None, [], ['owned', 'owned'], ['../escape'], [1]):
+                with self.assertRaises(ValueError): rust.validate_wasm_packages(dict(config(), wasm_packages=selection))
+            with self.assertRaises(ValueError): rust.validate_metadata(root, metadata, ['absent'])
+            metadata['packages'][0]['targets'] = [{'kind': ['bin']}]
+            with self.assertRaises(ValueError): rust.validate_metadata(root, metadata, ['owned'])
+            self.assertEqual(rust.validate_wasm_packages(dict(config(repository='eylema-evals'), wasm_packages=[])), [])
 
     def test_runtime_job_cannot_be_missing_skipped_or_privileged(self):
         original = load_yaml(ROOT / '.github/workflows/ci.yml')
@@ -99,6 +112,7 @@ class RustProfileTests(unittest.TestCase):
                 calls = [c.args[1] for c in run.call_args_list]
                 self.assertEqual([a[4] for a in calls[1:]], ['metadata', 'fmt', 'clippy', 'test', 'build', 'build'])
                 self.assertEqual(calls[-1][-2:], ['--target', rust.TARGET])
+                self.assertIn('--package', calls[-1]); self.assertNotIn('--workspace', calls[-1])
                 for index in range(len(calls)):
                     count = 0
                     def failure(root, args, capture=False):

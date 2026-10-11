@@ -282,8 +282,9 @@ def validate_source_stage(root, names, config):
         return
     require({'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'tools/check_rust.py'} <= set(names)
             and any(n.endswith('.rs') for n in sources), 'Incomplete Rust implementation gates/workspace')
-    from check_rust import validate_toolchain
+    from check_rust import validate_toolchain, validate_wasm_packages
     validate_toolchain(root)
+    validate_wasm_packages(config)
     require(not any(n.startswith('.cargo/') for n in names), 'Cargo overrides require a reviewed profile update')
 
 
