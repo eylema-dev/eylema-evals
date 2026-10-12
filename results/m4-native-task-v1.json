@@ -2,10 +2,12 @@
   "artifact": {
     "build_command": [
       "cargo",
+      "+1.99.0",
       "build",
       "--workspace",
       "--locked",
-      "--release"
+      "--release",
+      "--offline"
     ],
     "package_version": "0.1.0",
     "sha256": "316631235f24abc3b2271e946862d6ac1b6453bf118c97bc57f6bd03c9c76467"
@@ -22,15 +24,15 @@
   "format_version": 1,
   "measurement_tool": {
     "repository": "eylema-dev/eylema-evals",
-    "revision": "4d3a52d28e6b202cd9217841529d622d517e64cb",
-    "script_sha256": "3d4ada6841d02a467bce38e773da2359c74ae05314cc0e88081e93d548f5db0c",
-    "tree": "10bd4435de4b5aaeed97ad82c6141b604be64da2"
+    "revision": "3bc88c8b00790ae37d55a26dca750839f2c378e2",
+    "script_sha256": "ef8be65de89a1b42f1418e2bea2bebf4b5b07352358a47ec544d063182678446",
+    "tree": "63896b3b0f5353e6fcbb534fa68e4e8c53401a18"
   },
   "profile_id": "m4-native-task-v1",
   "profile_sha256": "500c245bbaee369dbcb72fae564f3a107d1b72bf428c905c69999d3c7726b526",
   "samples": [
     {
-      "duration_ms": 62.96825,
+      "duration_ms": 64.156584,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-1-service-cold-start",
@@ -40,7 +42,7 @@
       "trial": 1
     },
     {
-      "duration_ms": 46.476334,
+      "duration_ms": 65.2445,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-1-cold-task",
@@ -50,7 +52,7 @@
       "trial": 1
     },
     {
-      "duration_ms": 51.106833,
+      "duration_ms": 59.923917,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-1-warm-task-1",
@@ -60,7 +62,7 @@
       "trial": 1
     },
     {
-      "duration_ms": 52.858791,
+      "duration_ms": 67.091417,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-1-warm-task-2",
@@ -70,7 +72,7 @@
       "trial": 1
     },
     {
-      "duration_ms": 65.267041,
+      "duration_ms": 58.788459,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-1-warm-task-3",
@@ -90,7 +92,7 @@
       "trial": 1
     },
     {
-      "duration_ms": 63.766083,
+      "duration_ms": 106.551417,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-2-service-cold-start",
@@ -100,7 +102,7 @@
       "trial": 2
     },
     {
-      "duration_ms": 53.930459,
+      "duration_ms": 63.030875,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-2-cold-task",
@@ -110,7 +112,7 @@
       "trial": 2
     },
     {
-      "duration_ms": 76.242416,
+      "duration_ms": 79.141084,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-2-warm-task-1",
@@ -120,7 +122,7 @@
       "trial": 2
     },
     {
-      "duration_ms": 82.646542,
+      "duration_ms": 101.090375,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-2-warm-task-2",
@@ -130,7 +132,7 @@
       "trial": 2
     },
     {
-      "duration_ms": 81.598,
+      "duration_ms": 84.231708,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-2-warm-task-3",
@@ -150,7 +152,7 @@
       "trial": 2
     },
     {
-      "duration_ms": 97.332708,
+      "duration_ms": 164.10525,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-3-service-cold-start",
@@ -160,7 +162,7 @@
       "trial": 3
     },
     {
-      "duration_ms": 49.974083,
+      "duration_ms": 99.317542,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-3-cold-task",
@@ -170,7 +172,7 @@
       "trial": 3
     },
     {
-      "duration_ms": 61.901875,
+      "duration_ms": 74.495583,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-3-warm-task-1",
@@ -180,7 +182,7 @@
       "trial": 3
     },
     {
-      "duration_ms": 50.288834,
+      "duration_ms": 448.652833,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-3-warm-task-2",
@@ -190,7 +192,7 @@
       "trial": 3
     },
     {
-      "duration_ms": 49.496917,
+      "duration_ms": 74.041208,
       "error_code": null,
       "exit_code": 0,
       "id": "trial-3-warm-task-3",
@@ -220,14 +222,14 @@
     "cold_task": {
       "attempts": 3,
       "failed": 0,
-      "median_ms": 49.974083,
+      "median_ms": 65.2445,
       "passed": 3,
       "unmeasured": 0
     },
     "service_cold_start": {
       "attempts": 3,
       "failed": 0,
-      "median_ms": 63.766083,
+      "median_ms": 106.551417,
       "passed": 3,
       "unmeasured": 0
     },
@@ -241,7 +243,7 @@
     "warm_task": {
       "attempts": 9,
       "failed": 0,
-      "median_ms": 61.901875,
+      "median_ms": 74.495583,
       "passed": 9,
       "unmeasured": 0
     }
