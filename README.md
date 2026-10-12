@@ -2,7 +2,7 @@
 
 Behavioral, performance and hardware evaluation. [Türkçe](README.tr.md).
 
-**Status: evaluation tooling and versioned observations.** G18 supplies a fixed native task measurement harness and a three-trial M4 result. G22 adds a bounded combined Metal/WebGPU measurement harness and an exact source/artifact profile; its real Chrome combined-load acceptance is pending. Production execution remains in core; no model or training run is provided here.
+**Status: evaluation tooling and versioned observations.** G18 supplies a fixed native task measurement harness and a three-trial M4 result. G22 adds a bounded combined Metal/WebGPU measurement harness, an exact source/artifact profile and three real Chrome/M4 observations. Raw records retain the earlier unsuccessful attempt; delivery gates are separate from hardware observations. Production execution remains in core; no model or training run is provided here.
 
 ## Scope
 
@@ -23,3 +23,5 @@ Animation callback intervals and queue completion wall times are host observatio
 Python is development/evaluation tooling, not an application runtime. The repository retains its documentation source profile and shared gates; the collector/validator regressions run in ordinary Python CI. Rust/GPU execution belongs to the pinned first-party core and requires separate hardware evidence.
 
 Use [CONTRIBUTING](CONTRIBUTING.md) and [AGENTS](AGENTS.md). Keep private data, credentials, operational records and model weights outside Git. Public artifacts need their own approved storage, provenance and license decision; no store or service is provisioned here. First-party source and documentation are licensed under [Apache-2.0](LICENSE). Separately identified third-party material, model weights and datasets retain their own terms.
+
+G22 records: [three passed trials](results/m4-combined-gpu-v1.json), [retained failed first attempt](results/m4-combined-gpu-v1-attempt-1.json) and [capture provenance and limits](results/m4-combined-gpu-v1-observation.json). Each trial contains 120 browser frames and 98/89/90 overlapping checked Metal calls. The same native PID completes five further checked calls after each actual tab closure. RAF p95 was 9.2/9.3/9.2 ms; native complete-call p95 was 6.587/8.357/7.790459 ms. These host observations do not assert a GPU-only timing, physical VRAM value or performance SLA. The real Chrome native UI saved DOM snapshots for full JSON extraction because AX text is truncated; snapshot tab indices are scoped by trial and may be reused. No saved HTML or unrelated browser data is public.

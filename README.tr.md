@@ -2,7 +2,7 @@
 
 Davranış, performans ve donanım değerlendirmesi. [English](README.md).
 
-**Durum: değerlendirme araçları ve sürümlenmiş gözlemler.** G18 sabit yerel görev ölçüm aracı ve üç denemelik M4 sonucu sağlar. G22 sınırlı birleşik Metal/WebGPU ölçüm aracı ve kesin kaynak/artifact profili ekler; gerçek Chrome ortak yük kabulü beklemektedir. Üretim yürütmesi çekirdekte kalır; burada model veya eğitim koşusu sunulmaz.
+**Durum: değerlendirme araçları ve sürümlenmiş gözlemler.** G18 sabit yerel görev ölçüm aracı ve üç denemelik M4 sonucu sağlar. G22 sınırlı birleşik Metal/WebGPU ölçüm aracı, kesin kaynak/artifact profili ve üç gerçek Chrome/M4 gözlemi ekler. Ham kayıtlar önceki başarısız girişimi korur; teslim kapıları donanım gözlemlerinden ayrıdır. Üretim yürütmesi çekirdekte kalır; burada model veya eğitim koşusu sunulmaz.
 
 ## Kapsam
 
@@ -23,3 +23,5 @@ Animasyon callback aralıkları ve kuyruk tamamlanma süreleri ana makine gözle
 Python uygulama çalışma zamanı değil, geliştirme/değerlendirme aracıdır. Depo belge kaynak profilini ve ortak kapıları korur; toplayıcı/doğrulayıcı regresyonları olağan Python CI'ında çalışır. Rust/GPU yürütmesi sabitlenmiş birinci taraf çekirdeğe aittir ve ayrı donanım kanıtı gerektirir.
 
 [Katkı rehberini](CONTRIBUTING.tr.md) ve [AGENTS](AGENTS.md) sözleşmesini kullanın. Özel veriler, kimlik bilgileri, operasyon kayıtları ve model ağırlıkları Git dışında kalır. Açık varlıklar için ayrıca onaylanmış depolama, köken ve lisans kararı gerekir; burada depolama veya hizmet kurulmaz. Kendi kaynak kodumuz ve belgelerimiz [Apache-2.0](LICENSE) lisanslıdır. Ayrı belirtilen üçüncü taraf içerikleri, model ağırlıkları ve veri kümeleri kendi koşullarını korur.
+
+G22 kayıtları: [üç başarılı deneme](results/m4-combined-gpu-v1.json), [korunan ilk başarısız girişim](results/m4-combined-gpu-v1-attempt-1.json) ve [yakalama kökeni ve sınırları](results/m4-combined-gpu-v1-observation.json). Her deneme 120 tarayıcı karesi ve 98/89/90 örtüşen doğrulanmış Metal çağrısı içerir. Aynı native PID, her gerçek sekme kapanışından sonra beş yeni doğrulanmış çağrı tamamlar. RAF p95 9,2/9,3/9,2 ms; tam native çağrı p95 6,587/8,357/7,790459 ms oldu. Bu ana makine gözlemleri yalnızca GPU süresi, fiziksel VRAM değeri veya performans SLA'sı iddiası değildir. AX metni kesildiği için gerçek Chrome native arayüzü, tam JSON çıkarımı için DOM görüntülerini kaydetti; görüntüdeki sekme indeksleri denemeyle sınırlıdır ve yeniden kullanılabilir. Kaydedilmiş HTML veya ilgisiz tarayıcı verisi yayımlanmaz.

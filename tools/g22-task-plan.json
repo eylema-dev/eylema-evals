@@ -56,7 +56,7 @@
   "verification": {
     "local": {
       "python_tests": "passed; 52 tests including14synthetic combined-measurement regressions, not hardware evidence",
-      "repository_and_translation": "passed; 39 files,2 language records; EN/TR reviewed and fingerprints refreshed",
+      "repository_and_translation": "passed; 42 files,2 language records; EN/TR reviewed and fingerprints refreshed",
       "rust_gate": "skipped; documentation source profile, Python remains measurement tooling",
       "pr_template_and_diff": "passed"
     },
@@ -65,22 +65,43 @@
       "tree": "9f7ad210ee0ed53b00952f979a3cbad53d672bd3",
       "pr": "https://github.com/eylema-dev/eylema/pull/56",
       "source_review": "passed exact integrated head; separate context /root/g16_review",
-      "pr_ci": 38282626225,
+      "pr_ci": 38283919679,
       "pr_ci_status": "passed; repository-checks and rust-checks",
       "release_native_smoke": "passed; 72 actual checked Metal calls in one bounded second, complete-call wall range3.113291..144.355333ms; not combined acceptance"
     },
     "pending": [
-      "Authorized real Chrome/Metal three-trial capture, actual RSS and observed tab-close/native-liveness proof",
-      "Exact final evals head independent review and PR CI",
+      "Exact final eval head independent review and current PR CI",
       "Core/evals main CI and devguide live Goal acceptance/pins"
     ],
     "initial_source_review": {
       "head": "2b86f480183dd400d968ad71ab650ae6f0084c3e",
-      "status": "failed; late open-marker finding, repaired; fresh exact-head review pending"
+      "status": "failed; late open-marker finding repaired, source review passed at685a6dbd7f5080050f1c6265bd4e072689fc3fd7"
+    },
+    "hardware": {
+      "status": "passed",
+      "result": "results/m4-combined-gpu-v1.json",
+      "capture_source_evals_head": "685a6dbd7f5080050f1c6265bd4e072689fc3fd7",
+      "native_calls": 7404,
+      "trials": 3,
+      "frames_per_trial": 120,
+      "overlapping_native_calls": [
+        98,
+        89,
+        90
+      ],
+      "checked_calls_after_each_close": [
+        5,
+        5,
+        5
+      ],
+      "native_rss_samples": 404,
+      "failed_attempt_preserved": "results/m4-combined-gpu-v1-attempt-1.json",
+      "chrome_permissions": "Maintainer approved G22 two minutes, then explicitly two further minutes; actual control intervals112772ms and60706ms",
+      "limits": "Host wall clocks/RSS/browser JS estimate; physical VRAM/driver/GPUtimestamps/energy/models remain unmeasured"
     }
   },
   "risks": [
-    "Real Chrome acceptance requires maintainer-granted local browser time; authorization requested and pending.",
+    "Real Chrome acceptance used two explicitly authorized bounded intervals (112772ms,60706ms); all test tabs closed and owned service stopped.",
     "Closing a tab cannot preempt the native worker; worker stdin stop and maximum duration/sample count bound its lifetime.",
     "Measurements are observations on one hardware/workload profile, without invented numerical success thresholds."
   ],
@@ -101,7 +122,7 @@
   "repair_record": {
     "reviewed_head": "67ef10af2544cc297152589d7bfbfda6a22339e8",
     "finding": "P2: unbounded stdin.lines() control allocation",
-    "repair": "Fixed six-byte control buffer; oversized, partial, unknown and empty input regressions; fresh exact-head review pending"
+    "repair": "Fixed six-byte control buffer; oversized, partial, unknown and empty input regressions; independent source review passed at7da0ca14605d568fb76f9ce48aa09efac86f127f"
   },
   "integration_base": {
     "main": "5eaad7525795f51a02a8319a9453c57b676120df",
