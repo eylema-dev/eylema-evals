@@ -2,9 +2,10 @@
 import copy
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import run_measurement as measurement
@@ -68,6 +69,38 @@ class MeasurementTests(unittest.TestCase):
         result = {'format_version': 1, 'status': 'passed', 'samples': [unknown]}
         with self.assertRaisesRegex(ValueError, 'retain a reason'):
             measurement.validate_result(result)
+
+    def test_build_ignores_stale_same_version_artifact_in_core_checkout(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            core = root / 'core'
+            core.mkdir()
+            stale = core / 'target/release/eylema'
+            stale.parent.mkdir(parents=True)
+            stale.write_text('stale same-version artifact')
+            target = root / 'fresh-target'
+            target.mkdir()
+
+            def fake_build(command, **kwargs):
+                self.assertEqual(command, ['cargo', '+1.99.0', 'build', '--workspace',
+                                           '--locked', '--release', '--offline'])
+                self.assertEqual(kwargs['cwd'], core)
+                self.assertEqual(kwargs['env']['CARGO_TARGET_DIR'], str(target.resolve()))
+                self.assertEqual(set(kwargs['env']), {
+                    'PATH', 'HOME', 'TMPDIR', 'CARGO_HOME', 'RUSTUP_HOME', 'CARGO_TARGET_DIR'})
+                artifact = target / 'release/eylema'
+                artifact.parent.mkdir(parents=True)
+                artifact.write_text('built from pinned source')
+                artifact.chmod(0o755)
+                return Mock(returncode=0, stderr='')
+
+            with patch.object(measurement.shutil, 'which', return_value='/test/cargo'), \
+                    patch.object(measurement.subprocess, 'run', side_effect=fake_build):
+                binary, command, _ = measurement.build_cli(core, self.profile, target)
+
+            self.assertNotEqual(binary, stale)
+            self.assertEqual(binary.read_text(), 'built from pinned source')
+            self.assertEqual(command[-1], '--offline')
 
 
 if __name__ == '__main__':

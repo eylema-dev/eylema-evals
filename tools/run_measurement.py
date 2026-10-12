@@ -147,6 +147,30 @@ def safe_environment(data_dir):
             'TMPDIR': tempfile.gettempdir(), 'LANG': os.environ.get('LANG', 'C')}
 
 
+def build_cli(core_root, profile, target_dir):
+    """Build the pinned source into a fresh target directory and return its CLI."""
+    cargo = shutil.which('cargo')
+    require(cargo is not None, 'Cargo must be available to build the pinned core source')
+    target_dir = target_dir.resolve()
+    require(not any(target_dir.iterdir()), 'Cargo target directory must be fresh and empty')
+    environment = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'),
+                   'HOME': os.environ.get('HOME', str(Path.home())),
+                   'TMPDIR': tempfile.gettempdir(),
+                   'CARGO_HOME': os.environ.get('CARGO_HOME', str(Path.home() / '.cargo')),
+                   'RUSTUP_HOME': os.environ.get('RUSTUP_HOME', str(Path.home() / '.rustup')),
+                   'CARGO_TARGET_DIR': str(target_dir)}
+    command = ['cargo', '+' + profile['core']['toolchain'], 'build', '--workspace',
+               '--locked', '--release', '--offline']
+    built = subprocess.run(command, cwd=core_root, env=environment, capture_output=True,
+                           text=True, timeout=900, check=False)
+    require(built.returncode == 0,
+            'Pinned core build failed: ' + (built.stderr[-2000:] if built.stderr else 'no diagnostics'))
+    binary = target_dir / 'release' / 'eylema'
+    require(binary.is_file() and os.access(binary, os.X_OK),
+            'Pinned core build did not produce the expected CLI artifact')
+    return binary, command, environment
+
+
 def start_service(binary, commands, env, timeout, trial):
     started = time.monotonic_ns()
     try:
@@ -261,7 +285,7 @@ def validate_result(result):
     require(result['status'] == expected, 'Aggregate result cannot hide failures or unknown samples')
 
 
-def run(profile_path, workload_path, core_checkout, binary_path, output_path):
+def run(profile_path, workload_path, core_checkout, output_path):
     profile_bytes = profile_path.read_bytes()
     workload_bytes = workload_path.read_bytes()
     profile = json.loads(profile_bytes)
@@ -270,16 +294,27 @@ def run(profile_path, workload_path, core_checkout, binary_path, output_path):
     require(platform.system() == 'Darwin' and platform.machine() == 'arm64',
             'M4 native profile requires Apple Silicon macOS')
     core_root = verify_core_checkout(core_checkout, profile)
-    binary = binary_path.resolve()
-    require(binary.is_relative_to(core_root), 'CLI artifact must be inside the pinned core checkout')
-    require(binary.is_file() and os.access(binary, os.X_OK), 'CLI binary must exist and be executable')
+    target_directory = tempfile.TemporaryDirectory(prefix='eylema-g18-build-')
+    try:
+        target_dir = Path(target_directory.name)
+        binary, build_command, build_environment = build_cli(core_root, profile, target_dir)
+        verify_core_checkout(core_root, profile)
+        return run_built(profile, workload, profile_bytes, workload_bytes, core_root,
+                         binary, build_command, build_environment, output_path)
+    finally:
+        target_directory.cleanup()
+
+
+def run_built(profile, workload, profile_bytes, workload_bytes, core_root,
+              binary, build_command, build_environment, output_path):
     version = subprocess.run([str(binary), *profile['commands']['version']], capture_output=True,
-                             text=True, timeout=5, check=False)
+                             env=build_environment, text=True, timeout=5, check=False)
     require(version.returncode == 0 and version.stdout.strip() ==
             f"eylema {profile['core']['package_version']}", 'CLI binary version differs from profile')
-    rustc = shutil.which('rustc')
+    rustc = shutil.which('rustc', path=build_environment['PATH'])
     require(rustc is not None, 'Pinned rustc must be available on PATH')
-    rustc_result = subprocess.run([rustc, '--version'], capture_output=True, text=True,
+    rustc_result = subprocess.run([rustc, '+' + profile['core']['toolchain'], '--version'],
+                                  env=build_environment, capture_output=True, text=True,
                                   timeout=5, check=False)
     require(rustc_result.returncode == 0 and rustc_result.stdout.startswith(
             'rustc ' + profile['core']['toolchain'] + ' '), 'Rust compiler differs from profile')
@@ -334,7 +369,7 @@ def run(profile_path, workload_path, core_checkout, binary_path, output_path):
                                    'script_sha256': sha256_file(Path(__file__))},
               'artifact': {'package_version': profile['core']['package_version'],
                            'sha256': sha256_file(binary),
-                           'build_command': ['cargo', 'build', '--workspace', '--locked', '--release']},
+                           'build_command': build_command},
               'toolchain': {'expected': profile['core']['toolchain'],
                             'observed': rustc_result.stdout.strip()},
               'target': profile['target'], 'environment': host_environment(),
@@ -354,11 +389,10 @@ def main():
     parser.add_argument('--profile', type=Path, default=Path('profiles/m4-native-task-v1.json'))
     parser.add_argument('--workload', type=Path, default=Path('workloads/native-task-demo-v1.json'))
     parser.add_argument('--core-checkout', required=True, type=Path)
-    parser.add_argument('--binary', required=True, type=Path)
     parser.add_argument('--output', type=Path, default=Path('results/m4-native-task-v1.json'))
     args = parser.parse_args()
     try:
-        result = run(args.profile, args.workload, args.core_checkout, args.binary, args.output)
+        result = run(args.profile, args.workload, args.core_checkout, args.output)
     except (ValueError, KeyError, TypeError, OSError, subprocess.SubprocessError,
             json.JSONDecodeError) as error:
         print(f'FAIL: {error}', file=sys.stderr)
