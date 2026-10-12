@@ -5,6 +5,6 @@
   "stage": "documentation",
   "tooling_version": "0.3.0",
   "runtime_implemented": false,
-  "license_status": "pending maintainer decision",
+  "license_status": "Apache-2.0",
   "gate_profile": "documentation-v1"
 }
