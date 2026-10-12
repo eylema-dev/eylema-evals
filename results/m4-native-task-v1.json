@@ -1,0 +1,288 @@
+{
+  "artifact": {
+    "build_command": [
+      "cargo",
+      "+1.99.0",
+      "build",
+      "--workspace",
+      "--locked",
+      "--release",
+      "--offline"
+    ],
+    "package_version": "0.1.0",
+    "sha256": "316631235f24abc3b2271e946862d6ac1b6453bf118c97bc57f6bd03c9c76467"
+  },
+  "environment": {
+    "architecture": "arm64",
+    "chip_model": "Apple M4 Pro",
+    "logical_cpu_count": 14,
+    "memory_bytes": 25769803776,
+    "os": "Darwin",
+    "os_version": "27.0.0"
+  },
+  "evidence_boundary": "Native CPU CLI only; no Metal, WebGPU, model, training, GPU, or energy execution.",
+  "format_version": 1,
+  "measurement_tool": {
+    "repository": "eylema-dev/eylema-evals",
+    "revision": "5f74f644d1ad35ec8d4975bba13b85207ec3657d",
+    "script_sha256": "3294124b345ad6cea0aaeda5754a68fa45d510ecd2833525ff52c3cbf9617e1b",
+    "tree": "d02bab4ab05e3e32b4e2ecf360a8ce0eec927bab"
+  },
+  "profile_id": "m4-native-task-v1",
+  "profile_sha256": "d337f7a08e4a0614cd73f3857cff3fece40c9c8436d299fb3c9e90070921edd5",
+  "samples": [
+    {
+      "duration_ms": 102.988917,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-1-service-cold-start",
+      "phase": "service_cold_start",
+      "reason": null,
+      "status": "passed",
+      "trial": 1
+    },
+    {
+      "duration_ms": 50.209792,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-1-cold-task",
+      "phase": "cold_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 1
+    },
+    {
+      "duration_ms": 59.90225,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-1-warm-task-1",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 1
+    },
+    {
+      "duration_ms": 80.21275,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-1-warm-task-2",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 1
+    },
+    {
+      "duration_ms": 59.745625,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-1-warm-task-3",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 1
+    },
+    {
+      "duration_ms": null,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-1-service-shutdown",
+      "phase": "service_shutdown",
+      "reason": null,
+      "status": "passed",
+      "trial": 1
+    },
+    {
+      "duration_ms": 63.660209,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-2-service-cold-start",
+      "phase": "service_cold_start",
+      "reason": null,
+      "status": "passed",
+      "trial": 2
+    },
+    {
+      "duration_ms": 65.514208,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-2-cold-task",
+      "phase": "cold_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 2
+    },
+    {
+      "duration_ms": 63.759792,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-2-warm-task-1",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 2
+    },
+    {
+      "duration_ms": 50.894,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-2-warm-task-2",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 2
+    },
+    {
+      "duration_ms": 62.6665,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-2-warm-task-3",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 2
+    },
+    {
+      "duration_ms": null,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-2-service-shutdown",
+      "phase": "service_shutdown",
+      "reason": null,
+      "status": "passed",
+      "trial": 2
+    },
+    {
+      "duration_ms": 63.339,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-3-service-cold-start",
+      "phase": "service_cold_start",
+      "reason": null,
+      "status": "passed",
+      "trial": 3
+    },
+    {
+      "duration_ms": 47.914375,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-3-cold-task",
+      "phase": "cold_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 3
+    },
+    {
+      "duration_ms": 49.486708,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-3-warm-task-1",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 3
+    },
+    {
+      "duration_ms": 54.559291,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-3-warm-task-2",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 3
+    },
+    {
+      "duration_ms": 64.741834,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-3-warm-task-3",
+      "phase": "warm_task",
+      "reason": null,
+      "status": "passed",
+      "trial": 3
+    },
+    {
+      "duration_ms": null,
+      "error_code": null,
+      "exit_code": 0,
+      "id": "trial-3-service-shutdown",
+      "phase": "service_shutdown",
+      "reason": null,
+      "status": "passed",
+      "trial": 3
+    }
+  ],
+  "source": {
+    "repository": "https://github.com/eylema-dev/eylema",
+    "revision": "590ff647dd8a3fbee272e2fc2e517f22e2a1a754",
+    "tree": "593ef15cb62ccab401d4fa6936cd9568b2460fcd"
+  },
+  "status": "passed",
+  "summary": {
+    "cold_task": {
+      "attempts": 3,
+      "failed": 0,
+      "median_ms": 50.209792,
+      "passed": 3,
+      "unmeasured": 0
+    },
+    "service_cold_start": {
+      "attempts": 3,
+      "failed": 0,
+      "median_ms": 63.660209,
+      "passed": 3,
+      "unmeasured": 0
+    },
+    "service_shutdown": {
+      "attempts": 3,
+      "failed": 0,
+      "median_ms": null,
+      "passed": 3,
+      "unmeasured": 0
+    },
+    "warm_task": {
+      "attempts": 9,
+      "failed": 0,
+      "median_ms": 59.90225,
+      "passed": 9,
+      "unmeasured": 0
+    }
+  },
+  "target": {
+    "backend": "NativeCpu",
+    "execution_context": "NativeMacos"
+  },
+  "toolchain": {
+    "expected": "1.99.0",
+    "observed": "rustc 1.99.0 (b940084d7 2026-09-28)"
+  },
+  "unmeasured_capabilities": [
+    {
+      "name": "Metal",
+      "reason": "The selected core demo explicitly targets NativeCpu.",
+      "status": "unmeasured",
+      "value": null
+    },
+    {
+      "name": "browser WebGPU",
+      "reason": "This profile runs the native CLI and does not start a browser.",
+      "status": "unmeasured",
+      "value": null
+    },
+    {
+      "name": "model inference",
+      "reason": "The deterministic task demo does not load a model.",
+      "status": "unmeasured",
+      "value": null
+    },
+    {
+      "name": "energy",
+      "reason": "No energy measurement instrument is configured.",
+      "status": "unmeasured",
+      "value": null
+    }
+  ],
+  "workload_id": "native-task-demo-v1",
+  "workload_revision": 1,
+  "workload_sha256": "eefc8cc4fde5428dc7a9808f99cc05e1ec445af99016e27649f412bed961012d"
+}

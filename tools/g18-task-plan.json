@@ -1,0 +1,64 @@
+{
+  "format_version": 1,
+  "goal": "G18",
+  "task_revision": 2,
+  "issue": "https://github.com/eylema-dev/eylema-evals/issues/3",
+  "base": {
+    "repository": "eylema-dev/eylema-evals",
+    "main": "eee2145440416d042a607264bf8217f16e31c266"
+  },
+  "accepted_dependency": {
+    "goal": "G17",
+    "examples_main": "67b23a27604f4b887cffd1b133e7dc5dcff7835f",
+    "examples_tree": "c41cb72e5c96945ad0d99aa57f76ec523ec10f0d",
+    "devguide_main": "7fbff582bea841d32a628ff32d38cc091822e595",
+    "devguide_tree": "1ebbe863f509ab5edc82b9a06acb76076bd73821"
+  },
+  "allowed_paths": [
+    "profiles/",
+    "workloads/",
+    "tools/",
+    "results/"
+  ],
+  "contract": {
+    "input": "A versioned JSON profile binds a workload id/revision, exact core repository/revision/tree, expected CLI artifact SHA-256, release/toolchain versions, repetition counts, timeouts, and a fixed argument-vector workflow. The harness builds in a fresh isolated Cargo target and rejects any artifact whose SHA-256 differs from the profile.",
+    "workload": "Run the core local task CLI's NativeMacos/NativeCpu demo. Each trial starts a fresh local service, times readiness and the first demo request as cold samples, then times three demo requests against that same service as warm samples.",
+    "output": "A versioned JSON result binds the profile/workload digests, exact core SHA/tree, CLI binary SHA-256, isolated locked offline build command, Rust version, macOS version, architecture, and chip model. Every attempted sample remains a record with passed/failed/unmeasured status, nullable duration, exit code, and stable error code.",
+    "privacy": "Use an isolated private temporary data directory and a sanitized child environment. Record no serial number, hardware UUID, account name, absolute path, secret, model weight, or private training data.",
+    "non_targets": [
+      "Metal execution",
+      "browser WebGPU execution",
+      "model inference",
+      "training",
+      "GPU/energy measurement"
+    ]
+  },
+  "acceptance_mapping": [
+    {
+      "id": "G18-A1",
+      "check": "Three cold/warm trial groups bind exact source/artifact/environment; all repetitions are preserved. Unit tests cover failed samples, null/unmeasured metrics, and result round trips. A real M4 Pro NativeCpu CLI run produces a public JSON result without claiming Metal/WebGPU/model evidence."
+    }
+  ],
+  "risks": [
+    "The native CLI workload does not measure GPU, Metal, WebGPU, or model execution; those remain explicit unmeasured values.",
+    "Timings are device- and environment-specific observations, not performance thresholds or cross-device claims.",
+    "The harness runs only a fixed local argument vector, with no shell, secrets, or arbitrary issue-sourced commands."
+  ],
+  "budget": {
+    "active_minutes": 120,
+    "max_targeted_repairs": 3,
+    "new_spending": false
+  },
+  "tools_and_roles": {
+    "architect_implementer_verifier": "Codex, GPT-6 family; exact model SKU is not exposed in this task context.",
+    "tools": [
+      "Python 3.14.8",
+      "Rust/Cargo 1.99.0 via temporary rustup home",
+      "Git",
+      "GitHub CLI",
+      "macOS subprocess/monotonic clock"
+    ],
+    "independent_reviewer": "g16_review separate Codex context; pending exact final head."
+  },
+  "rollback": "Revert the scoped PR; remove the generated result artifact if it should not be retained. No external service or persistent user data is modified."
+}

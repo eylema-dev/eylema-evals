@@ -1,0 +1,34 @@
+{
+  "format_version": 1,
+  "profile_id": "m4-native-task-v1",
+  "workload": "native-task-demo-v1",
+  "core": {
+    "repository": "https://github.com/eylema-dev/eylema",
+    "revision": "590ff647dd8a3fbee272e2fc2e517f22e2a1a754",
+    "tree": "593ef15cb62ccab401d4fa6936cd9568b2460fcd",
+    "artifact_sha256": "316631235f24abc3b2271e946862d6ac1b6453bf118c97bc57f6bd03c9c76467",
+    "package_version": "0.1.0",
+    "toolchain": "1.99.0"
+  },
+  "target": {
+    "execution_context": "NativeMacos",
+    "backend": "NativeCpu"
+  },
+  "repetitions": 3,
+  "warm_repetitions_per_trial": 3,
+  "startup_timeout_seconds": 10,
+  "command_timeout_seconds": 15,
+  "commands": {
+    "version": ["--version"],
+    "start": ["start"],
+    "health": ["doctor"],
+    "measure": ["run", "demo", "1"],
+    "stop": ["stop", "service"]
+  },
+  "unmeasured_capabilities": [
+    {"name": "Metal", "status": "unmeasured", "value": null, "reason": "The selected core demo explicitly targets NativeCpu."},
+    {"name": "browser WebGPU", "status": "unmeasured", "value": null, "reason": "This profile runs the native CLI and does not start a browser."},
+    {"name": "model inference", "status": "unmeasured", "value": null, "reason": "The deterministic task demo does not load a model."},
+    {"name": "energy", "status": "unmeasured", "value": null, "reason": "No energy measurement instrument is configured."}
+  ]
+}
