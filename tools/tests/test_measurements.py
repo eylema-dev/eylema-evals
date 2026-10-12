@@ -28,6 +28,10 @@ class MeasurementTests(unittest.TestCase):
         changed['commands']['measure'] = ['sh', '-c', 'echo unsafe']
         with self.assertRaisesRegex(ValueError, 'fixed CLI argument vectors'):
             measurement.validate_profile(changed, self.workload)
+        changed = copy.deepcopy(self.profile)
+        changed['core']['artifact_sha256'] = 'not-a-sha256'
+        with self.assertRaisesRegex(ValueError, 'expected CLI artifact SHA-256'):
+            measurement.validate_profile(changed, self.workload)
 
     def test_command_failure_retains_error_and_measured_duration(self):
         completed = Mock(returncode=1, stdout='{"status":"error","code":"OUTCOME_UNKNOWN"}\n')
@@ -95,12 +99,34 @@ class MeasurementTests(unittest.TestCase):
                 return Mock(returncode=0, stderr='')
 
             with patch.object(measurement.shutil, 'which', return_value='/test/cargo'), \
-                    patch.object(measurement.subprocess, 'run', side_effect=fake_build):
+                    patch.object(measurement.subprocess, 'run', side_effect=fake_build), \
+                    patch.object(measurement, 'sha256_file', return_value=self.profile['core']['artifact_sha256']):
                 binary, command, _ = measurement.build_cli(core, self.profile, target)
 
             self.assertNotEqual(binary, stale)
             self.assertEqual(binary.read_text(), 'built from pinned source')
             self.assertEqual(command[-1], '--offline')
+
+    def test_build_rejects_artifact_hash_different_from_profile(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            core = root / 'core'
+            core.mkdir()
+            target = root / 'fresh-target'
+            target.mkdir()
+
+            def fake_build(command, **kwargs):
+                artifact = target / 'release/eylema'
+                artifact.parent.mkdir(parents=True)
+                artifact.write_text('different artifact')
+                artifact.chmod(0o755)
+                return Mock(returncode=0, stderr='')
+
+            with patch.object(measurement.shutil, 'which', return_value='/test/cargo'), \
+                    patch.object(measurement.subprocess, 'run', side_effect=fake_build), \
+                    patch.object(measurement, 'sha256_file', return_value='0' * 64):
+                with self.assertRaisesRegex(ValueError, 'differs from the profile'):
+                    measurement.build_cli(core, self.profile, target)
 
 
 if __name__ == '__main__':

@@ -21,7 +21,7 @@
     "results/"
   ],
   "contract": {
-    "input": "A versioned JSON profile binds a workload id/revision, exact core repository/revision/tree, CLI artifact SHA-256 built by the harness in a fresh isolated Cargo target, release/toolchain versions, repetition counts, timeouts, and a fixed argument-vector workflow.",
+    "input": "A versioned JSON profile binds a workload id/revision, exact core repository/revision/tree, expected CLI artifact SHA-256, release/toolchain versions, repetition counts, timeouts, and a fixed argument-vector workflow. The harness builds in a fresh isolated Cargo target and rejects any artifact whose SHA-256 differs from the profile.",
     "workload": "Run the core local task CLI's NativeMacos/NativeCpu demo. Each trial starts a fresh local service, times readiness and the first demo request as cold samples, then times three demo requests against that same service as warm samples.",
     "output": "A versioned JSON result binds the profile/workload digests, exact core SHA/tree, CLI binary SHA-256, isolated locked offline build command, Rust version, macOS version, architecture, and chip model. Every attempted sample remains a record with passed/failed/unmeasured status, nullable duration, exit code, and stable error code.",
     "privacy": "Use an isolated private temporary data directory and a sanitized child environment. Record no serial number, hardware UUID, account name, absolute path, secret, model weight, or private training data.",

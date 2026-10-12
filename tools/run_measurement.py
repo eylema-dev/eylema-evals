@@ -62,6 +62,9 @@ def validate_profile(profile, workload):
             'Core tree must be a full immutable tree')
     require(core.get('toolchain') == '1.99.0' and core.get('package_version') == '0.1.0',
             'Profile must bind the reviewed core toolchain and package version')
+    require(len(core.get('artifact_sha256', '')) == 64
+            and all(c in '0123456789abcdef' for c in core['artifact_sha256']),
+            'Profile must bind the expected CLI artifact SHA-256')
     require(profile.get('target') == {'execution_context': 'NativeMacos', 'backend': 'NativeCpu'},
             'This profile measures only the native macOS CPU target')
     require(type(profile.get('repetitions')) is int and 1 <= profile['repetitions'] <= 10,
@@ -168,6 +171,8 @@ def build_cli(core_root, profile, target_dir):
     binary = target_dir / 'release' / 'eylema'
     require(binary.is_file() and os.access(binary, os.X_OK),
             'Pinned core build did not produce the expected CLI artifact')
+    require(sha256_file(binary) == profile['core']['artifact_sha256'],
+            'Built CLI artifact SHA-256 differs from the profile')
     return binary, command, environment
 
 
