@@ -98,6 +98,9 @@ def validate_dependency_manifests(root, config, pins):
     declared = set()
     for manifest in manifests:
         data = tomllib.loads(manifest.read_text())
+        if manifest == root / 'Cargo.toml':
+            require('patch' not in data and 'replace' not in data,
+                    'Cargo workspace dependency overrides are forbidden before fetch')
         for section in _dependency_sections(data):
             for name, spec in section.items():
                 if isinstance(spec, dict) and spec.get('workspace') is True:

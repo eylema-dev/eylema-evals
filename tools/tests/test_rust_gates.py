@@ -280,6 +280,28 @@ class RustProfileTests(unittest.TestCase):
             fetch = next(index for index, args in enumerate(calls) if 'fetch' in args)
             metadata_call = next(index for index, args in enumerate(calls) if 'metadata' in args)
             self.assertLess(fetch, metadata_call)
+            for override in (
+                '[patch."https://github.com/eylema-dev/eylema"]\n'
+                'eylema-contracts = { git = "https://attacker.invalid/core", branch = "main" }\n',
+                '[replace]\n"eylema-contracts:0.1.0" = { git = "https://attacker.invalid/core", branch = "main" }\n',
+            ):
+                (root / 'Cargo.toml').write_text(
+                    '[workspace]\nmembers = ["task-console"]\nresolver = "3"\n\n[workspace.dependencies]\n'
+                    f'eylema-contracts = {{ git = "https://github.com/eylema-dev/eylema", rev = "{revision}" }}\n\n'
+                    + override)
+                calls.clear()
+                with contextlib.redirect_stdout(io.StringIO()), \
+                        patch('check_rust.validate_identity'), \
+                        patch('check_rust.validate_environment'), \
+                        patch('check_rust.validate_metadata'), \
+                        patch('check_rust.platform.system', return_value='Darwin'), \
+                        patch('check_rust.platform.machine', return_value='arm64'), \
+                        patch.dict('check_rust.os.environ', {}, clear=True), \
+                        patch('check_rust.Path.home', return_value=root), \
+                        patch('check_rust.run', side_effect=response):
+                    with self.assertRaisesRegex(ValueError, 'dependency overrides'):
+                        rust.check(root)
+                self.assertFalse(any('fetch' in args for args in calls), override)
 
     def test_docs_skip_and_wrong_host_never_provision(self):
         with tempfile.TemporaryDirectory() as temp:
