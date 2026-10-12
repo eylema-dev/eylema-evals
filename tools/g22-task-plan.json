@@ -55,7 +55,7 @@
   },
   "verification": {
     "local": {
-      "python_tests": "passed; 51 tests including 13 synthetic combined-measurement regressions, not hardware evidence",
+      "python_tests": "passed; 52 tests including14synthetic combined-measurement regressions, not hardware evidence",
       "repository_and_translation": "passed; 39 files,2 language records; EN/TR reviewed and fingerprints refreshed",
       "rust_gate": "skipped; documentation source profile, Python remains measurement tooling",
       "pr_template_and_diff": "passed"
@@ -73,7 +73,11 @@
       "Authorized real Chrome/Metal three-trial capture, actual RSS and observed tab-close/native-liveness proof",
       "Exact final evals head independent review and PR CI",
       "Core/evals main CI and devguide live Goal acceptance/pins"
-    ]
+    ],
+    "initial_source_review": {
+      "head": "2b86f480183dd400d968ad71ab650ae6f0084c3e",
+      "status": "failed; late open-marker finding, repaired; fresh exact-head review pending"
+    }
   },
   "risks": [
     "Real Chrome acceptance requires maintainer-granted local browser time; authorization requested and pending.",
@@ -93,7 +97,7 @@
     "tools/translation-pairs.json",
     "tools/work-plans/g22.json"
   ],
-  "targeted_repairs_used": 1,
+  "targeted_repairs_used": 2,
   "repair_record": {
     "reviewed_head": "67ef10af2544cc297152589d7bfbfda6a22339e8",
     "finding": "P2: unbounded stdin.lines() control allocation",
@@ -102,5 +106,11 @@
   "integration_base": {
     "main": "5eaad7525795f51a02a8319a9453c57b676120df",
     "reason": "Preserve independently merged PR8 accepted license metadata; no new decision in G22"
+  },
+  "second_repair": {
+    "reviewed_evals_head": "2b86f480183dd400d968ad71ab650ae6f0084c3e",
+    "finding": "P2: open tab observation could occur after first/final frame while trial passed",
+    "repair": "Require opened<=first_frame and closed>=last_frame; regression for both late open timestamps; operator opens/records ordinary console tab before fragment activation/reload",
+    "core_source_change": "not required; existing opt-in measurement starts on page initialization; linked core source remains independently reviewed at7da0ca1"
   }
 }

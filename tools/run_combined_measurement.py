@@ -144,6 +144,7 @@ def analyse_trial(profile, native, browser, markers, trial):
                      'TAB_IDENTITY_MISMATCH')
         first, last = frames[0]['start_unix_ms'], frames[-1]['end_unix_ms']
         base.require(number(opened.get('unix_ms')) and number(closed.get('unix_ms'))
+                     and opened['unix_ms'] <= first
                      and opened['unix_ms'] <= closed['unix_ms']
                      and closed['unix_ms'] >= last, 'TAB_CLOSE_CLOCK_INVALID')
         combined = [sample for sample in all_native

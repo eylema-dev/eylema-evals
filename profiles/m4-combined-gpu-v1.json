@@ -2,7 +2,7 @@
   "format_version": 1,
   "profile_id": "m4-combined-gpu-v1",
   "workload": "combined-gpu-v1",
-  "workload_sha256": "a221c8865dcee1030a21a0f3056487073ae7285c2325c2d451837c931df1df2d",
+  "workload_sha256": "b90c797629a9e13e0445173f60200f5dada67ecab236a5362e3a2a87103115de",
   "core": {
     "repository": "https://github.com/eylema-dev/eylema",
     "revision": "7da0ca14605d568fb76f9ce48aa09efac86f127f",

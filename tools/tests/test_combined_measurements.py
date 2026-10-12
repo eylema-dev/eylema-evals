@@ -124,6 +124,13 @@ class CombinedMeasurementTests(unittest.TestCase):
         self.assertEqual(result['trials'][0]['reason'], 'TAB_OBSERVATION_MISSING')
         self.assertEqual(len(result['trials'][0]['tab_observations']), 1)
 
+    def test_tab_open_after_first_or_final_frame_cannot_pass(self):
+        for timestamp in [1011, 1095]:
+            self.markers[0]['unix_ms'] = timestamp
+            with self.subTest(timestamp=timestamp):
+                self.assertEqual(self.result()['trials'][0]['reason'], 'TAB_CLOSE_CLOCK_INVALID')
+        self.assertEqual(self.result()['trials'][0]['tab_observations'][0]['unix_ms'], 1095)
+
     def test_missing_or_failed_rss_cannot_be_hidden(self):
         self.native['rss_samples'] = []
         self.assertEqual(self.result()['trials'][0]['reason'], 'RSS_NOT_MEASURED')
