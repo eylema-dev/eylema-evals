@@ -1,0 +1,11 @@
+{
+  "format_version": 1,
+  "workload_id": "native-task-demo-v1",
+  "revision": 1,
+  "description": "Submit one bounded deterministic local task through the pinned native Eylema CLI.",
+  "input": {"command": ["run", "demo", "1"], "delta": 1},
+  "cold_definition": "First CLI task request after a fresh service starts and passes its readiness probe.",
+  "warm_definition": "Subsequent CLI task requests on the same service process and private data directory.",
+  "expected_result": {"exit_code": 0, "json_status": "ok"},
+  "data_classification": "synthetic; no model or private data"
+}
