@@ -101,10 +101,14 @@ def validate_dependency_manifests(root, config, pins):
         for section in _dependency_sections(data):
             for name, spec in section.items():
                 if isinstance(spec, dict) and spec.get('workspace') is True:
+                    require(set(spec) <= {'workspace', 'features', 'optional'},
+                            'Workspace dependency inheritance cannot override its reviewed source')
                     if name in pins:
                         declared.add(name)
                     continue
                 if isinstance(spec, dict) and spec.get('path') is not None:
+                    require(set(spec) <= {'path', 'package', 'features', 'default-features', 'optional'},
+                            'Path dependencies cannot add an external source')
                     dep_path = (manifest.parent / spec['path']).resolve()
                     require(dep_path.is_relative_to(root), 'Path dependencies must remain inside the workspace')
                     continue

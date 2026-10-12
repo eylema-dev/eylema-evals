@@ -155,18 +155,19 @@ class RustProfileTests(unittest.TestCase):
         pins = rust.core_dependency_pins(config_value)
         self.assertEqual(set(pins), {'eylema-contracts'})
         expected_source = f'git+https://github.com/eylema-dev/eylema?rev={revision}#{revision}'
-        metadata = fixture(Path(tempfile.mkdtemp()))
-        metadata['packages'][0]['dependencies'] = [{'name': 'eylema-contracts', 'source': expected_source.rsplit('#', 1)[0], 'path': None}]
-        metadata['packages'].append({'id': 'git+eylema-contracts', 'name': 'eylema-contracts',
-                                     'source': expected_source, 'manifest_path': '/tmp/cargo/eylema-contracts/Cargo.toml',
-                                     'dependencies': [], 'targets': [{'kind': ['lib']} ]})
-        source_map = {name: expected_source for name in pins}
-        self.assertIsNone(rust.validate_metadata(Path(metadata['workspace_root']), metadata, [], source_map))
-        for bad_source in (expected_source.replace(revision, '0' * 40), 'registry+https://example.invalid'):
-            changed = copy.deepcopy(metadata)
-            changed['packages'][1]['source'] = bad_source
-            changed['packages'][0]['dependencies'][0]['source'] = bad_source
-            with self.assertRaises(ValueError): rust.validate_metadata(Path(metadata['workspace_root']), changed, [], pins)
+        with tempfile.TemporaryDirectory() as temp:
+            metadata = fixture(Path(temp))
+            metadata['packages'][0]['dependencies'] = [{'name': 'eylema-contracts', 'source': expected_source.rsplit('#', 1)[0], 'path': None}]
+            metadata['packages'].append({'id': 'git+eylema-contracts', 'name': 'eylema-contracts',
+                                         'source': expected_source, 'manifest_path': '/tmp/cargo/eylema-contracts/Cargo.toml',
+                                         'dependencies': [], 'targets': [{'kind': ['lib']}]})
+            source_map = {name: expected_source for name in pins}
+            self.assertIsNone(rust.validate_metadata(Path(metadata['workspace_root']), metadata, [], source_map))
+            for bad_source in (expected_source.replace(revision, '0' * 40), 'registry+https://example.invalid'):
+                changed = copy.deepcopy(metadata)
+                changed['packages'][1]['source'] = bad_source
+                changed['packages'][0]['dependencies'][0]['source'] = bad_source
+                with self.assertRaises(ValueError): rust.validate_metadata(Path(metadata['workspace_root']), changed, [], pins)
         for bad_config in (
             dict(config_value, first_party_git_dependencies={'eylema-contracts': {'repository': 'https://example.invalid/core', 'revision': revision}}),
             dict(config_value, first_party_git_dependencies={'other-crate': {'repository': 'https://github.com/eylema-dev/eylema', 'revision': revision}}),
@@ -196,6 +197,9 @@ class RustProfileTests(unittest.TestCase):
             with self.assertRaises(ValueError): rust.validate_dependency_manifests(root, repo_config, rust.core_dependency_pins(repo_config))
             package.write_text(package.read_text().replace('other = "1"', f'eylema-contracts = {{ git = "https://github.com/eylema-dev/eylema", branch = "main" }}'))
             with self.assertRaises(ValueError): rust.validate_dependency_manifests(root, repo_config, rust.core_dependency_pins(repo_config))
+            package.write_text('[package]\nname = "task-console"\nversion = "0.1.0"\nedition = "2024"\n\n'
+                               '[dependencies]\neylema-contracts = { workspace = true, git = "https://example.invalid/core" }\n')
+            with self.assertRaises(ValueError): rust.validate_dependency_manifests(root, repo_config, rust.core_dependency_pins(repo_config))
 
     def test_runner_executes_required_commands_and_propagates_each_failure(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -221,6 +225,61 @@ class RustProfileTests(unittest.TestCase):
                     self.assertEqual(count, index + 1)
                 with patch('check_rust.run', return_value='rustc 1.98.0 (fixture)'):
                     with self.assertRaises(ValueError): rust.check(root)
+
+    def test_runner_fetches_only_after_validating_pins_and_before_offline_metadata(self):
+        revision = 'b06b7bac1aa121a4fee81e9fd0f79e4cf2eeeb3f'
+        expected_source = f'git+https://github.com/eylema-dev/eylema?rev={revision}#{revision}'
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            initialize_git(root)
+            config_value = config(repository='eylema-examples')
+            config_value['wasm_packages'] = []
+            config_value['first_party_git_dependencies'] = {
+                'eylema-contracts': {'repository': 'https://github.com/eylema-dev/eylema', 'revision': revision}}
+            (root / 'repository.json').write_text(json.dumps(config_value))
+            (root / 'Cargo.toml').write_text(
+                '[workspace]\nmembers = ["task-console"]\nresolver = "3"\n\n[workspace.dependencies]\n'
+                f'eylema-contracts = {{ git = "https://github.com/eylema-dev/eylema", rev = "{revision}" }}\n')
+            (root / 'task-console').mkdir()
+            (root / 'task-console/Cargo.toml').write_text(
+                '[package]\nname = "task-console"\nversion = "0.1.0"\nedition = "2024"\n\n'
+                '[dependencies]\neylema-contracts.workspace = true\n')
+            (root / 'rust-toolchain.toml').write_text(
+                '[toolchain]\nchannel = "1.99.0"\nprofile = "minimal"\n'
+                'components = ["rustfmt", "clippy"]\ntargets = ["wasm32-unknown-unknown"]\n')
+            metadata = {'workspace_root': str(root), 'workspace_members': ['task-console'], 'packages': [
+                {'id': 'task-console', 'name': 'task-console', 'source': None,
+                 'manifest_path': str(root / 'task-console/Cargo.toml'),
+                 'dependencies': [{'name': 'eylema-contracts', 'source': expected_source.rsplit('#', 1)[0], 'path': None}],
+                 'targets': [{'kind': ['bin']}]},
+                {'id': 'eylema-contracts', 'name': 'eylema-contracts', 'source': expected_source,
+                 'manifest_path': '/tmp/cargo/eylema-contracts/Cargo.toml', 'dependencies': [],
+                 'targets': [{'kind': ['lib']}]},
+            ]}
+            calls = []
+
+            def response(root, args, capture=False):
+                calls.append(args)
+                if 'rustc' in args:
+                    return 'rustc 1.99.0 (fixture)\n'
+                if 'metadata' in args:
+                    return json.dumps(metadata)
+                return None
+
+            allowed = {'eylema-contracts': expected_source}
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    patch('check_rust.validate_identity'), \
+                    patch('check_rust.validate_environment'), \
+                    patch('check_rust.validate_metadata'), \
+                    patch('check_rust.platform.system', return_value='Darwin'), \
+                    patch('check_rust.platform.machine', return_value='arm64'), \
+                    patch.dict('check_rust.os.environ', {}, clear=True), \
+                    patch('check_rust.Path.home', return_value=root), \
+                    patch('check_rust.run', side_effect=response):
+                rust.check(root)
+            fetch = next(index for index, args in enumerate(calls) if 'fetch' in args)
+            metadata_call = next(index for index, args in enumerate(calls) if 'metadata' in args)
+            self.assertLess(fetch, metadata_call)
 
     def test_docs_skip_and_wrong_host_never_provision(self):
         with tempfile.TemporaryDirectory() as temp:
