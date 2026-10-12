@@ -1,0 +1,37 @@
+{
+  "format_version": 1,
+  "profile_id": "m4-combined-gpu-v1",
+  "workload": "combined-gpu-v1",
+  "workload_sha256": "b90c797629a9e13e0445173f60200f5dada67ecab236a5362e3a2a87103115de",
+  "core": {
+    "repository": "https://github.com/eylema-dev/eylema",
+    "revision": "7da0ca14605d568fb76f9ce48aa09efac86f127f",
+    "tree": "9f7ad210ee0ed53b00952f979a3cbad53d672bd3",
+    "toolchain": "1.99.0",
+    "native_worker_sha256": "2fa8c7f63f98378fc29c8f53f7698a72130af18839fa67ecf9f06f856154fb7b",
+    "cli_sha256": "6190d645d24fe8cac7447254d02ed2f6ce7cd7039ad3939512ca09d99bbe37a0",
+    "browser_module_sha256": "5342e17fb06dc53999e044a6688b256500828ecb8c8f2ce334960e201b70b101"
+  },
+  "trials": 3,
+  "frames": 120,
+  "native_seconds": 120,
+  "rss_interval_ms": 200,
+  "minimum_overlap_samples": 5,
+  "build_command": [
+    "cargo",
+    "+1.99.0",
+    "build",
+    "--workspace",
+    "--examples",
+    "--bins",
+    "--locked",
+    "--release",
+    "--offline"
+  ],
+  "build_environment": "Fresh isolated CARGO_TARGET_DIR; default compiler provisioning paths; RUST_LOG omitted; no compiler/source overrides",
+  "targets": [
+    "native macOS arm64 Metal on Apple M4 Pro",
+    "real Chrome WebGPU on same host"
+  ],
+  "scope": "Host wall clocks/RSS/browser JS estimate; no physical VRAM, driver allocation, GPU timestamp, energy or model measurements"
+}

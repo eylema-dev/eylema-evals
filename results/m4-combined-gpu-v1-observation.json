@@ -1,0 +1,72 @@
+{
+  "format_version": 1,
+  "goal": "G22",
+  "capture_source_evals_head": "685a6dbd7f5080050f1c6265bd4e072689fc3fd7",
+  "core": {
+    "repository": "https://github.com/eylema-dev/eylema",
+    "revision": "7da0ca14605d568fb76f9ce48aa09efac86f127f",
+    "tree": "9f7ad210ee0ed53b00952f979a3cbad53d672bd3",
+    "toolchain": "1.99.0",
+    "native_worker_sha256": "2fa8c7f63f98378fc29c8f53f7698a72130af18839fa67ecf9f06f856154fb7b",
+    "cli_sha256": "6190d645d24fe8cac7447254d02ed2f6ce7cd7039ad3939512ca09d99bbe37a0",
+    "browser_module_sha256": "5342e17fb06dc53999e044a6688b256500828ecb8c8f2ce334960e201b70b101"
+  },
+  "accepted_observation": {
+    "attempt": 2,
+    "result": "m4-combined-gpu-v1.json",
+    "status": "passed",
+    "trials": 3,
+    "frames_per_trial": 120,
+    "native_pid": 97339,
+    "native_calls": 7404,
+    "native_rss_samples": 404,
+    "termination": "requested_stop",
+    "chrome_control_duration_ms": 60706,
+    "native_overlapping_calls_per_trial": [
+      98,
+      89,
+      90
+    ],
+    "checked_calls_after_each_close": [
+      5,
+      5,
+      5
+    ]
+  },
+  "retained_failed_attempts": [
+    {
+      "attempt": 1,
+      "result": "m4-combined-gpu-v1-attempt-1.json",
+      "status": "failed",
+      "native_calls": 10000,
+      "chrome_control_duration_ms": 112772,
+      "reasons": [
+        "NATIVE_WORK_NOT_OBSERVED_AFTER_TAB_CLOSE",
+        "BROWSER_FAILED_OR_MISSING",
+        "BROWSER_FAILED_OR_MISSING"
+      ]
+    }
+  ],
+  "capture_method": {
+    "browser": "Existing real Google Chrome native app controlled through cua_repl; Chrome browser API surface unavailable",
+    "activation": "Ordinary console opened/observed first; same tab navigated to trial URL fragment and reloaded",
+    "raw_browser_record": "Chrome Save Webpage Complete via native UI; scene-measurement pre text extracted without changing JSON values",
+    "tab_identity": "Cua native accessibility snapshot tab index; scoped by trial, may be reused between closed/reopened tabs; not a persistent Chrome-extension tab handle",
+    "marker_time": "Attempt2 records Date.now at each actual Cua open/close observation; first failed attempt retains delayed CLI close marker unchanged",
+    "local_scope": "Only 127.0.0.1 console pages were opened for tests; original user tabs were preserved; test tabs closed and owned service stopped"
+  },
+  "raw_browser_html_sha256": {
+    "1": "ae891da8c4399bd146c6bf23abe695b4db7123f735e0cfd4e6e7be9b22d95742",
+    "2": "de872bd82530519f358124344877dc9b45df81e88e47a6b73507e54b4ec9a903",
+    "3": "7c592b9e2a86ced5758d95d19c53c4b8381c96d51f816592c6cc8a2da581f34e"
+  },
+  "public_record_limits": "Saved HTML remains private; public JSON omits credentials, private paths and unrelated browser content; raw latency/frame/RSS/heap samples retained",
+  "performance_sla": "not specified; these are observations for this hardware/workload",
+  "unmeasured": [
+    "physical VRAM and driver allocations",
+    "hardware GPU and presented timestamps",
+    "energy",
+    "model inference"
+  ],
+  "delivery_status": "source/hardware observations passed; exact final review/CI and main/devguide acceptance pending"
+}

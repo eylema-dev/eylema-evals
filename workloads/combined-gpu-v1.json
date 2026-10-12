@@ -1,0 +1,48 @@
+{
+  "format_version": 1,
+  "workload_id": "combined-gpu-v1",
+  "revision": 1,
+  "native": {
+    "implementation": "eylema-runtime example combined-gpu-proof",
+    "backend": "native Metal",
+    "elements": 4096,
+    "lhs_value": 1,
+    "rhs_value": 2,
+    "expected_readback_value": 3,
+    "declared_metal_buffer_bytes": 49152,
+    "sleep_between_calls_ms": 5,
+    "maximum_duration_seconds": 120,
+    "maximum_samples": 10000,
+    "cooperative_stop_command": "stop followed by LF or CRLF; fixed six-byte reader"
+  },
+  "browser": {
+    "implementation": "core local WebGPU three-object scene",
+    "frames_per_trial": 120,
+    "trials": 3,
+    "fragment": "#g22=120&trial=<1..3>",
+    "movement": "selected object x=0.16*sin(frame/10)",
+    "completion": "requestAnimationFrame, render, then GPUQueue.onSubmittedWorkDone",
+    "close_observation": "close actual local Chrome tab through cua and record its observed tab ID",
+    "activation": "Open ordinary console tab, record actual ID/open observation before frames; navigate same tab to trial fragment and reload; capture JSON, close actual tab and record close"
+  },
+  "measurements": {
+    "native_complete_call_ms": "Monotonic wall duration includes Metal setup/compile/compute/readback verification",
+    "raf_interval_ms": "Animation callback interval; first sample is null; not presented-frame timing",
+    "queue_completion_wall_ms": "Host-observed submit to queue completion; not GPU hardware timestamp",
+    "native_rss_bytes": "Actual same-PID ps RSS sampled every 200 ms",
+    "browser_js_heap_estimate_bytes": "Browser performance.memory.usedJSHeapSize when available; null otherwise",
+    "percentiles": "Nearest-rank p50/p95/p99, min/max/mean; raw samples retained"
+  },
+  "acceptance": {
+    "overlapping_native_samples_per_trial": 5,
+    "native_samples_after_each_actual_tab_close": 5,
+    "native_rss_samples_during_each_view": 1,
+    "performance_sla": "not specified; observations only",
+    "unmeasured": [
+      "physical VRAM and driver allocations",
+      "GPU/presented timestamps",
+      "energy",
+      "model inference"
+    ]
+  }
+}
