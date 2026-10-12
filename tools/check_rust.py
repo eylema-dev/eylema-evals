@@ -60,22 +60,110 @@ def validate_wasm_packages(config):
     return packages
 
 
-def validate_metadata(root, value, wasm_packages=()):
+def core_dependency_pins(config):
+    pins = config.get('first_party_git_dependencies', {})
+    if config.get('repository') != 'eylema-dev/eylema-examples':
+        require(pins == {}, 'First-party Git dependency exceptions belong only to examples')
+        return {}
+    require(config.get('role') == 'examples' and isinstance(pins, dict)
+            and set(pins) == {'eylema-contracts'}, 'Examples must pin only the core contract package')
+    pin = pins['eylema-contracts']
+    require(isinstance(pin, dict) and set(pin) == {'repository', 'revision'}
+            and pin['repository'] == 'https://github.com/eylema-dev/eylema'
+            and isinstance(pin['revision'], str) and re.fullmatch('[0-9a-f]{40}', pin['revision']),
+            'Examples core dependency must use the canonical repository and immutable commit')
+    return {'eylema-contracts': pin}
+
+
+def _dependency_sections(value):
+    if not isinstance(value, dict):
+        return
+    for key, child in value.items():
+        if key in {'dependencies', 'dev-dependencies', 'build-dependencies'} and isinstance(child, dict):
+            yield child
+        yield from _dependency_sections(child)
+
+
+def validate_dependency_manifests(root, config, pins):
+    """Reject unreviewed dependency sources before any online Cargo fetch."""
     root = root.resolve()
+    workspace = tomllib.loads((root / 'Cargo.toml').read_text())
+    member_paths = workspace.get('workspace', {}).get('members', [])
+    require(isinstance(member_paths, list) and member_paths, 'Rust workspace must name its first-party members')
+    manifests = [root / 'Cargo.toml']
+    for member in member_paths:
+        path = (root / member).resolve()
+        require(path.is_relative_to(root) and path.is_dir(), 'Cargo workspace member escapes repository')
+        manifests.extend(path.rglob('Cargo.toml'))
+    declared = set()
+    for manifest in manifests:
+        data = tomllib.loads(manifest.read_text())
+        for section in _dependency_sections(data):
+            for name, spec in section.items():
+                if isinstance(spec, dict) and spec.get('workspace') is True:
+                    if name in pins:
+                        declared.add(name)
+                    continue
+                if isinstance(spec, dict) and spec.get('path') is not None:
+                    dep_path = (manifest.parent / spec['path']).resolve()
+                    require(dep_path.is_relative_to(root), 'Path dependencies must remain inside the workspace')
+                    continue
+                require(name in pins and isinstance(spec, dict)
+                        and set(spec) <= {'git', 'rev', 'package', 'default-features', 'features', 'optional'}
+                        and spec.get('git') == pins[name]['repository']
+                        and spec.get('rev') == pins[name]['revision']
+                        and spec.get('package', name) == name,
+                        'External dependencies are forbidden except the exact pinned first-party core contract')
+                declared.add(name)
+    root_workspace_deps = workspace.get('workspace', {}).get('dependencies', {})
+    for name, pin in pins.items():
+        spec = root_workspace_deps.get(name)
+        require(isinstance(spec, dict) and spec.get('git') == pin['repository']
+                and spec.get('rev') == pin['revision'] and spec.get('package', name) == name,
+                'Workspace must declare each first-party core dependency at its reviewed revision')
+        require(name in declared, 'Pinned first-party core dependency is not consumed by a workspace package')
+    return {name: 'git+' + pin['repository'] + '?rev=' + pin['revision'] + '#' + pin['revision']
+            for name, pin in pins.items()}
+
+
+def validate_metadata(root, value, wasm_packages=(), allowed_git_sources=None):
+    root = root.resolve()
+    allowed_git_sources = allowed_git_sources or {}
     require(Path(value['workspace_root']).resolve() == root, 'Foreign Cargo workspace')
     packages = value.get('packages', [])
     members = value.get('workspace_members', [])
     require(packages and len(members) == len(set(members))
-            and len(packages) == len(members) and {p['id'] for p in packages} == set(members), 'External Cargo packages are forbidden in rust-v1')
+            and {p['id'] for p in packages if p.get('source') is None} == set(members), 'Cargo workspace members must be first-party')
+    external = {}
+    for package in packages:
+        source = package.get('source')
+        if source is not None:
+            require(source == allowed_git_sources.get(package['name']),
+                    'External Cargo package is not the exact pinned first-party core contract')
+            require(package['name'] not in external, 'Duplicate external Cargo package')
+            external[package['name']] = source
+    require(external == allowed_git_sources, 'Pinned first-party Cargo dependencies must be present exactly once')
     libraries = {p['name'] for p in packages if any(set(t.get('kind', [])) & {'lib', 'rlib', 'cdylib', 'staticlib'} for t in p.get('targets', []))}
     require(set(wasm_packages) <= libraries, 'Wasm packages must name actual owned workspace libraries')
     for package in packages:
         manifest = Path(package['manifest_path']).resolve()
-        require(package.get('source') is None and manifest.is_relative_to(root) and manifest.is_file(),
-                'Every Cargo package must be first-party workspace-local')
-        require(not any(d.get('source') is not None or not d.get('path')
-                        or not Path(d['path']).resolve().is_relative_to(root)
-                        for d in package.get('dependencies', [])), 'External dependency declaration')
+        if package.get('source') is None:
+            require(manifest.is_relative_to(root) and manifest.is_file(),
+                    'Every workspace package must be first-party and local')
+        else:
+            require(package.get('name') in allowed_git_sources and package.get('name') == 'eylema-contracts',
+                    'Only core contract source may be external to the examples workspace')
+        for dependency in package.get('dependencies', []):
+            source = dependency.get('source')
+            if source is not None:
+                expected = allowed_git_sources.get(dependency.get('name'))
+                require(expected is not None and source == expected.rsplit('#', 1)[0],
+                        'External dependency declaration is not the pinned core contract')
+            elif dependency.get('path') is not None:
+                require(Path(dependency['path']).resolve().is_relative_to(root),
+                        'Path dependencies must remain inside the workspace')
+            else:
+                require(False, 'External registry dependencies are forbidden')
         require(not any(t.get('kind') == ['custom-build'] for t in package.get('targets', [])),
                 'Build scripts require a reviewed profile update')
 
@@ -113,8 +201,12 @@ def check(root, provision=False):
     version = run(root, prefix + ['rustc', '--version'], capture=True)
     require(version.startswith('rustc ' + TOOLCHAIN + ' '), 'Unexpected compiler version')
     print(version.strip())
+    pins = core_dependency_pins(config)
+    allowed_git_sources = validate_dependency_manifests(root, config, pins)
+    if allowed_git_sources:
+        run(root, prefix + ['cargo', 'fetch', '--locked'])
     metadata = json.loads(run(root, prefix + ['cargo', 'metadata', '--locked', '--offline', '--all-features', '--format-version', '1'], capture=True))
-    validate_metadata(root, metadata, wasm_packages)
+    validate_metadata(root, metadata, wasm_packages, allowed_git_sources)
     for command in [
         ['fmt', '--all', '--', '--check'],
         ['clippy', '--workspace', '--all-targets', '--all-features', '--locked', '--offline', '--', '-D', 'warnings'],
