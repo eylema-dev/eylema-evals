@@ -18,6 +18,18 @@ class MeasurementTests(unittest.TestCase):
         self.profile = json.loads((ROOT / 'profiles/m4-native-task-v1.json').read_text())
         self.workload = json.loads((ROOT / 'workloads/native-task-demo-v1.json').read_text())
 
+    def test_org_rename_preserves_profile_identity_and_rejects_foreign_owner(self):
+        for repository in ('eylema-dev/eylema', 'eyleme-dev/eylema', 'eyleme-dev/eyleme'):
+            changed = copy.deepcopy(self.profile)
+            changed['core']['repository'] = f'https://github.com/{repository}'
+            measurement.validate_profile(changed, self.workload)
+        for url in ('https://github.com/other/eylema', 'https://github.com/eyleme-dev-evil/eylema',
+                    'https://github.com/eyleme-dev/other'):
+            changed = copy.deepcopy(self.profile)
+            changed['core']['repository'] = url
+            with self.assertRaises(ValueError):
+                measurement.validate_profile(changed, self.workload)
+
     def test_reviewed_profile_binds_exact_core_and_fixed_commands(self):
         measurement.validate_profile(self.profile, self.workload)
         changed = copy.deepcopy(self.profile)

@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "repository": "eylema-dev/eylema-evals",
+  "repository": "eyleme-dev/eylema-evals",
   "role": "evals",
   "stage": "documentation",
   "tooling_version": "0.3.0",

@@ -141,7 +141,7 @@ def validate_workflow(workflow):
     require(set(rust) == {'name', 'if', 'runs-on', 'timeout-minutes', 'steps'}, 'Unexpected Rust job configuration')
     require(rust['name'] == 'rust-checks' and rust['runs-on'] == 'macos-26' and rust['timeout-minutes'] == 20,
             'Rust CI requires bounded native ARM64 macOS runner')
-    require(rust['if'] == "github.repository == 'eylema-dev/eylema' || github.repository == 'eylema-dev/eylema-examples' || github.repository == 'eylema-dev/eylema-evals'", 'Rust job role mismatch')
+    require(rust['if'] == "github.repository == 'eyleme-dev/eyleme' || github.repository == 'eyleme-dev/eylema-examples' || github.repository == 'eyleme-dev/eylema-evals'", 'Rust job role mismatch')
     require(rust['steps'] == [
         {'name': 'Checkout reviewed revision', 'uses': 'actions/checkout@' + ACTIONS['actions/checkout'],
          'with': {'fetch-depth': 0, 'persist-credentials': False}},
@@ -178,7 +178,7 @@ def validate_workflow(workflow):
     require(len(pr_steps) == 1 and pr_steps[0].get("if") == "github.event_name == 'pull_request'", "Real PR gate must run on PR events")
     require("--allow-template" not in joined, "CI must not treat actual PR bodies as blank templates")
     integration = [s for s in job['steps'] if 'tools/check_workspace.py' in s.get('run', '')]
-    require(len(integration) == 1 and integration[0].get('if') == "github.repository == 'eylema-dev/devguide'"
+    require(len(integration) == 1 and integration[0].get('if') == "github.repository == 'eyleme-dev/devguide'"
             and integration[0]['run'] == '.venv/bin/python tools/check_workspace.py --fetch',
             'Devguide must run the pinned repository-set gate')
 
@@ -215,7 +215,7 @@ def verify_translations(root, manifest, write=False):
 
 
 ROLES = {
-    'eylema': 'core', 'eylema-docs-en': 'docs-en', 'eylema-docs-tr': 'docs-tr',
+    'eyleme': 'core', 'eylema-docs-en': 'docs-en', 'eylema-docs-tr': 'docs-tr',
     'devguide': 'guide', '.github': 'community', 'eylema-examples': 'examples',
     'eylema-evals': 'evals', 'eylema-models': 'models', 'eylema-training': 'training',
 }
@@ -232,8 +232,8 @@ SHARED_FILES = {
 
 
 def validate_repository_config(config):
-    name = config.get('repository', '').removeprefix('eylema-dev/')
-    require(config.get('repository') == 'eylema-dev/' + name and name in ROLES, 'Unexpected repository identity')
+    name = config.get('repository', '').removeprefix('eyleme-dev/')
+    require(config.get('repository') == 'eyleme-dev/' + name and name in ROLES, 'Unexpected repository identity')
     require(config.get('format_version') == 1 and config.get('role') == ROLES[name], 'Invalid repository role/version')
     stage = config.get('stage')
     require(stage in {'documentation', 'implementation'}, 'Unknown source stage')
@@ -241,7 +241,7 @@ def validate_repository_config(config):
         require(config.get('runtime_implemented') is False and config.get('gate_profile') == 'documentation-v1',
                 'Documentation profile must not claim runtime implementation')
     else:
-        require(name in {'eylema', 'eylema-examples', 'eylema-evals'}
+        require(name in {'eyleme', 'eylema-examples', 'eylema-evals'}
                 and config.get('runtime_implemented') is True and config.get('gate_profile') == 'rust-v1',
                 'Implementation requires an approved Rust-capable role/profile')
     require(config.get('tooling_version') == '0.3.0', 'Unexpected tooling version')
@@ -259,7 +259,7 @@ def verify_document_coverage(names, manifest):
 
 
 def verify_vendor(root, manifest):
-    require(manifest.get('source_repository') == 'eylema-dev/devguide'
+    require(manifest.get('source_repository') == 'eyleme-dev/devguide'
             and manifest.get('tooling_version') == '0.3.0', 'Unknown shared tooling source')
     files = manifest.get('files', {})
     require(set(files) == SHARED_FILES, 'Incomplete or unexpected tooling inventory')
@@ -295,9 +295,9 @@ def validate_source_stage(root, names, config):
 
 def validate_schema_ownership(repository, schemas):
     required = {'ai-team-protocol/request.schema.json', 'ai-team-protocol/model-set-release.schema.json'}
-    require((repository == 'eylema' and required <= set(schemas)
+    require((repository == 'eyleme' and required <= set(schemas)
              and all(n.startswith('ai-team-protocol/') and '..' not in Path(n).parts for n in schemas))
-            or (repository != 'eylema' and not schemas), 'Machine schemas belong only in core ai-team-protocol')
+            or (repository != 'eyleme' and not schemas), 'Machine schemas belong only in core ai-team-protocol')
 
 
 def check(root, event=None):

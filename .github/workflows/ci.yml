@@ -49,11 +49,11 @@ jobs:
         if: github.event_name == 'pull_request'
         run: .venv/bin/python tools/check_pr.py --event "$GITHUB_EVENT_PATH"
       - name: Verify pinned repository set as data
-        if: github.repository == 'eylema-dev/devguide'
+        if: github.repository == 'eyleme-dev/devguide'
         run: .venv/bin/python tools/check_workspace.py --fetch
   rust-checks:
     name: rust-checks
-    if: github.repository == 'eylema-dev/eylema' || github.repository == 'eylema-dev/eylema-examples' || github.repository == 'eylema-dev/eylema-evals'
+    if: github.repository == 'eyleme-dev/eyleme' || github.repository == 'eyleme-dev/eylema-examples' || github.repository == 'eyleme-dev/eylema-evals'
     runs-on: macos-26
     timeout-minutes: 20
     steps:

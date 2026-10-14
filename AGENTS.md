@@ -1,8 +1,8 @@
-# Eylema repository adapter
+# Eyleme repository adapter
 
-Read the [shared contributor contract](https://github.com/eylema-dev/devguide/blob/main/AGENTS.md) and [workflow](https://github.com/eylema-dev/devguide/blob/main/CONTRIBUTING.md) before changing files. This adapter adds no competing policy. If the shared contract cannot be obtained, report that limitation before changing policy-sensitive files.
+Read the [shared contributor contract](https://github.com/eyleme-dev/devguide/blob/main/AGENTS.md) and [workflow](https://github.com/eyleme-dev/devguide/blob/main/CONTRIBUTING.md) before changing files. This adapter adds no competing policy. If the shared contract cannot be obtained, report that limitation before changing policy-sensitive files.
 
-Repository: `eylema-dev/eylema-evals`. Read [README](README.md), [repository scope](repository.json), the [repository map](https://github.com/eylema-dev/devguide/blob/main/docs/en/repository-map.md), and the accepted task. Work on one scoped branch from current `main`, preserve unrelated work and deliver through a PR. Repository creation does not authorize merge or deployment. Record actual tools/models, evidence and pending independent review.
+Repository: `eyleme-dev/eylema-evals`. Read [README](README.md), [repository scope](repository.json), the [repository map](https://github.com/eyleme-dev/devguide/blob/main/docs/en/repository-map.md), and the accepted task. Work on one scoped branch from current `main`, preserve unrelated work and deliver through a PR. Repository creation does not authorize merge or deployment. Record actual tools/models, evidence and pending independent review.
 
 English is canonical; Turkish documentation tracks its source. Code, identifiers, templates and technical records use English. No runtime is implemented by this setup. The exact local documentation-stage commands are:
 

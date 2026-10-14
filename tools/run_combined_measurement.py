@@ -30,7 +30,9 @@ def validate_profile(profile):
                      Path(__file__).resolve().parents[1] / 'workloads/combined-gpu-v1.json'),
                  'WORKLOAD_BINDING')
     core = profile.get('core', {})
-    base.require(core.get('repository') == 'https://github.com/eylema-dev/eylema', 'CORE_REPOSITORY')
+    base.require(core.get('repository') in {'https://github.com/eyleme-dev/eyleme',
+                                         'https://github.com/eyleme-dev/eylema',
+                                         'https://github.com/eylema-dev/eylema'}, 'CORE_REPOSITORY')
     for field, length in [('revision', 40), ('tree', 40), ('native_worker_sha256', 64),
                           ('cli_sha256', 64), ('browser_module_sha256', 64)]:
         base.require(bool(re.fullmatch('[0-9a-f]{' + str(length) + '}', core.get(field, ''))),

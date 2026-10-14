@@ -15,7 +15,7 @@ class CombinedMeasurementTests(unittest.TestCase):
                         'workload': 'combined-gpu-v1',
                         'workload_sha256': measurement.base.sha256_file(
                             Path(__file__).resolve().parents[2] / 'workloads/combined-gpu-v1.json'),
-                        'core': {'repository': 'https://github.com/eylema-dev/eylema',
+                        'core': {'repository': 'https://github.com/eyleme-dev/eyleme',
                                  'revision': 'a' * 40, 'tree': 'b' * 40,
                                  'native_worker_sha256': 'c' * 64, 'cli_sha256': 'd' * 64,
                                  'browser_module_sha256': 'e' * 64, 'toolchain': '1.99.0'},
@@ -51,6 +51,18 @@ class CombinedMeasurementTests(unittest.TestCase):
 
     def result(self):
         return measurement.final_result(self.profile, self.native, self.browsers, self.markers)
+
+    def test_org_rename_preserves_profile_identity_and_rejects_foreign_owner(self):
+        for repository in ('eylema-dev/eylema', 'eyleme-dev/eylema', 'eyleme-dev/eyleme'):
+            changed = copy.deepcopy(self.profile)
+            changed['core']['repository'] = f'https://github.com/{repository}'
+            measurement.validate_profile(changed)
+        for url in ('https://github.com/other/eylema', 'https://github.com/eyleme-dev-evil/eylema',
+                    'https://github.com/eyleme-dev/other'):
+            changed = copy.deepcopy(self.profile)
+            changed['core']['repository'] = url
+            with self.assertRaises(ValueError):
+                measurement.validate_profile(changed)
 
     def test_three_trials_require_overlap_and_same_process_after_each_close(self):
         result = self.result()

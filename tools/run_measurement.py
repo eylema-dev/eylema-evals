@@ -54,7 +54,9 @@ def validate_profile(profile, workload):
     require(workload.get('format_version') == 1 and workload.get('revision') == 1,
             'Unsupported workload version')
     core = profile.get('core', {})
-    require(core.get('repository') == 'https://github.com/eylema-dev/eylema',
+    require(core.get('repository') in {'https://github.com/eyleme-dev/eyleme',
+                                         'https://github.com/eyleme-dev/eylema',
+                                         'https://github.com/eylema-dev/eylema'},
             'Only the canonical first-party core is accepted')
     require(len(core.get('revision', '')) == 40 and all(c in '0123456789abcdef' for c in core['revision']),
             'Core revision must be a full immutable commit')
@@ -249,7 +251,7 @@ def host_environment():
 
 
 def tool_source(evals_root):
-    return {'repository': 'eylema-dev/eylema-evals',
+    return {'repository': 'eyleme-dev/eylema-evals',
             'revision': git_value(evals_root, 'rev-parse', 'HEAD'),
             'tree': git_value(evals_root, 'rev-parse', 'HEAD^{tree}')}
 
