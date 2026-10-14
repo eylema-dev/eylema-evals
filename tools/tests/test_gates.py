@@ -124,10 +124,10 @@ class RepositoryTests(unittest.TestCase):
             verify_document_coverage(['README.md', 'docs/architecture.md'], manifest)
 
     def test_repository_role_and_stage_cannot_be_relaxed(self):
-        config = {'format_version': 1, 'repository': 'eylema-dev/eylema', 'role': 'core',
+        config = {'format_version': 1, 'repository': 'eyleme-dev/eyleme', 'role': 'core',
                   'stage': 'documentation', 'runtime_implemented': False, 'tooling_version': '0.3.0', 'gate_profile': 'documentation-v1'}
-        self.assertEqual(validate_repository_config(config), 'eylema')
-        for key, value in [('repository', 'other/eylema'), ('role', 'reserved'), ('stage', 'runtime'), ('runtime_implemented', True)]:
+        self.assertEqual(validate_repository_config(config), 'eyleme')
+        for key, value in [('repository', 'eylema-dev/eylema'), ('repository', 'other/eylema'), ('role', 'reserved'), ('stage', 'runtime'), ('runtime_implemented', True)]:
             with self.subTest(key=key):
                 bad = dict(config, **{key: value})
                 with self.assertRaises(CheckFailure): validate_repository_config(bad)
@@ -141,7 +141,7 @@ class RepositoryTests(unittest.TestCase):
                      '.github/CODEOWNERS', '.github/copilot-instructions.md', '.github/workflows/ci.yml',
                      '.github/ISSUE_TEMPLATE/config.yml', '.github/ISSUE_TEMPLATE/feature.yml',
                      '.github/ISSUE_TEMPLATE/bug.yml', '.github/ISSUE_TEMPLATE/architecture.yml']
-            manifest = {'source_repository': 'eylema-dev/devguide', 'tooling_version': '0.3.0', 'files': {}}
+            manifest = {'source_repository': 'eyleme-dev/devguide', 'tooling_version': '0.3.0', 'files': {}}
             for name in names:
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)

@@ -10,8 +10,8 @@ from pathlib import Path
 
 TOOLCHAIN = '1.99.0'
 TARGET = 'wasm32-unknown-unknown'
-ROLES = {'eylema-dev/eylema': 'core', 'eylema-dev/eylema-examples': 'examples', 'eylema-dev/eylema-evals': 'evals'}
-REPOSITORIES = {'eylema', 'devguide', '.github', 'eylema-docs-en', 'eylema-docs-tr',
+ROLES = {'eyleme-dev/eyleme': 'core', 'eyleme-dev/eylema-examples': 'examples', 'eyleme-dev/eylema-evals': 'evals'}
+REPOSITORIES = {'eyleme', 'devguide', '.github', 'eylema-docs-en', 'eylema-docs-tr',
                 'eylema-examples', 'eylema-evals', 'eylema-models', 'eylema-training'}
 
 
@@ -22,7 +22,7 @@ def require(condition, message):
 
 def validate_identity(root, config):
     identity = config.get('repository')
-    require(identity in {'eylema-dev/' + n for n in REPOSITORIES}, 'Unknown repository identity')
+    require(identity in {'eyleme-dev/' + n for n in REPOSITORIES}, 'Unknown repository identity')
     actual = os.environ.get('GITHUB_REPOSITORY')
     require(actual is None or actual == identity, 'Declared repository differs from trusted CI identity')
     def remote(name):
@@ -62,14 +62,14 @@ def validate_wasm_packages(config):
 
 def core_dependency_pins(config):
     pins = config.get('first_party_git_dependencies', {})
-    if config.get('repository') != 'eylema-dev/eylema-examples':
+    if config.get('repository') != 'eyleme-dev/eylema-examples':
         require(pins == {}, 'First-party Git dependency exceptions belong only to examples')
         return {}
     require(config.get('role') == 'examples' and isinstance(pins, dict)
             and set(pins) == {'eylema-contracts'}, 'Examples must pin only the core contract package')
     pin = pins['eylema-contracts']
     require(isinstance(pin, dict) and set(pin) == {'repository', 'revision'}
-            and pin['repository'] == 'https://github.com/eylema-dev/eylema'
+            and pin['repository'] == 'https://github.com/eyleme-dev/eyleme'
             and isinstance(pin['revision'], str) and re.fullmatch('[0-9a-f]{40}', pin['revision']),
             'Examples core dependency must use the canonical repository and immutable commit')
     return {'eylema-contracts': pin}

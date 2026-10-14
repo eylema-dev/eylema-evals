@@ -15,9 +15,9 @@ from check_repository import (ROOT, CheckFailure, load_yaml, validate_repository
                               validate_source_stage, validate_workflow, validate_schema_ownership)
 
 
-def config(stage='implementation', repository='eylema'):
-    roles = {'eylema': 'core', 'eylema-examples': 'examples', 'eylema-evals': 'evals', 'eylema-models': 'models'}
-    return {'format_version': 1, 'repository': 'eylema-dev/' + repository, 'role': roles[repository],
+def config(stage='implementation', repository='eyleme'):
+    roles = {'eyleme': 'core', 'eylema-examples': 'examples', 'eylema-evals': 'evals', 'eylema-models': 'models'}
+    return {'format_version': 1, 'repository': 'eyleme-dev/' + repository, 'role': roles[repository],
             'stage': stage, 'runtime_implemented': stage == 'implementation', 'tooling_version': '0.3.0',
             'gate_profile': 'rust-v1' if stage == 'implementation' else 'documentation-v1',
             **({'wasm_packages': ['owned']} if stage == 'implementation' else {})}
@@ -25,7 +25,7 @@ def config(stage='implementation', repository='eylema'):
 
 def initialize_git(root):
     subprocess.run(['git', 'init', '--quiet', str(root)], check=True)
-    subprocess.run(['git', '-C', str(root), 'remote', 'add', 'origin', 'https://github.com/eylema-dev/eylema.git'], check=True)
+    subprocess.run(['git', '-C', str(root), 'remote', 'add', 'origin', 'https://github.com/eyleme-dev/eyleme.git'], check=True)
 
 
 def fixture(root):
@@ -43,7 +43,7 @@ def fixture(root):
 
 class RustProfileTests(unittest.TestCase):
     def test_only_reviewed_roles_can_enter_implementation(self):
-        for name in ('eylema', 'eylema-examples', 'eylema-evals'):
+        for name in ('eyleme', 'eylema-examples', 'eylema-evals'):
             self.assertEqual(validate_repository_config(config(repository=name)), name)
         for value in (config(repository='eylema-models'), dict(config(), gate_profile='trust-me'),
                       dict(config('documentation'), runtime_implemented=True)):
@@ -55,18 +55,18 @@ class RustProfileTests(unittest.TestCase):
             with patch.dict('check_rust.os.environ', {}, clear=True):
                 rust.validate_identity(root, config())
                 with self.assertRaises(ValueError): rust.validate_identity(root, config(repository='eylema-examples'))
-            with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eylema-dev/eylema-training'}, clear=True):
+            with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eyleme-dev/eylema-training'}, clear=True):
                 with self.assertRaises(ValueError): rust.validate_identity(root, config())
-            with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eylema-dev/eylema'}, clear=True):
+            with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eyleme-dev/eyleme'}, clear=True):
                 rust.validate_identity(root, config())
 
     def test_local_forks_require_matching_canonical_upstream(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); initialize_git(root)
-            subprocess.run(['git', '-C', str(root), 'remote', 'set-url', 'origin', 'https://github.com/contributor/eylema.git'], check=True)
+            subprocess.run(['git', '-C', str(root), 'remote', 'set-url', 'origin', 'https://github.com/contributor/eyleme.git'], check=True)
             with patch.dict('check_rust.os.environ', {}, clear=True):
                 with self.assertRaises(subprocess.CalledProcessError): rust.validate_identity(root, config())
-                subprocess.run(['git', '-C', str(root), 'remote', 'add', 'upstream', 'https://github.com/eylema-dev/eylema.git'], check=True)
+                subprocess.run(['git', '-C', str(root), 'remote', 'add', 'upstream', 'https://github.com/eyleme-dev/eyleme.git'], check=True)
                 rust.validate_identity(root, config())
                 with self.assertRaises(ValueError): rust.validate_identity(root, config(repository='eylema-examples'))
                 subprocess.run(['git', '-C', str(root), 'remote', 'set-url', 'upstream', 'https://github.com/other/eylema.git'], check=True)
@@ -102,9 +102,9 @@ class RustProfileTests(unittest.TestCase):
 
     def test_schemas_remain_core_owned_with_required_contracts(self):
         required = ['ai-team-protocol/request.schema.json', 'ai-team-protocol/model-set-release.schema.json']
-        validate_schema_ownership('eylema', required + ['ai-team-protocol/task.schema.json'])
-        for repo, schemas in [('eylema', required[:1]), ('eylema', required + ['docs/foreign.schema.json']),
-                              ('eylema', required + ['ai-team-protocol/../escape.schema.json']),
+        validate_schema_ownership('eyleme', required + ['ai-team-protocol/task.schema.json'])
+        for repo, schemas in [('eyleme', required[:1]), ('eyleme', required + ['docs/foreign.schema.json']),
+                              ('eyleme', required + ['ai-team-protocol/../escape.schema.json']),
                               ('eylema-models', required), ('devguide', required)]:
             with self.assertRaises(CheckFailure): validate_schema_ownership(repo, schemas)
 
@@ -151,10 +151,10 @@ class RustProfileTests(unittest.TestCase):
         config_value = config(repository='eylema-examples')
         config_value['wasm_packages'] = []
         config_value['first_party_git_dependencies'] = {
-            'eylema-contracts': {'repository': 'https://github.com/eylema-dev/eylema', 'revision': revision}}
+            'eylema-contracts': {'repository': 'https://github.com/eyleme-dev/eyleme', 'revision': revision}}
         pins = rust.core_dependency_pins(config_value)
         self.assertEqual(set(pins), {'eylema-contracts'})
-        expected_source = f'git+https://github.com/eylema-dev/eylema?rev={revision}#{revision}'
+        expected_source = f'git+https://github.com/eyleme-dev/eyleme?rev={revision}#{revision}'
         with tempfile.TemporaryDirectory() as temp:
             metadata = fixture(Path(temp))
             metadata['packages'][0]['dependencies'] = [{'name': 'eylema-contracts', 'source': expected_source.rsplit('#', 1)[0], 'path': None}]
@@ -170,9 +170,9 @@ class RustProfileTests(unittest.TestCase):
                 with self.assertRaises(ValueError): rust.validate_metadata(Path(metadata['workspace_root']), changed, [], pins)
         for bad_config in (
             dict(config_value, first_party_git_dependencies={'eylema-contracts': {'repository': 'https://example.invalid/core', 'revision': revision}}),
-            dict(config_value, first_party_git_dependencies={'other-crate': {'repository': 'https://github.com/eylema-dev/eylema', 'revision': revision}}),
-            dict(config_value, first_party_git_dependencies={'eylema-contracts': {'repository': 'https://github.com/eylema-dev/eylema', 'revision': 'main'}}),
-            dict(config_value, repository='eylema-dev/eylema'),
+            dict(config_value, first_party_git_dependencies={'other-crate': {'repository': 'https://github.com/eyleme-dev/eyleme', 'revision': revision}}),
+            dict(config_value, first_party_git_dependencies={'eylema-contracts': {'repository': 'https://github.com/eyleme-dev/eyleme', 'revision': 'main'}}),
+            dict(config_value, repository='eyleme-dev/eyleme'),
         ):
             with self.assertRaises(ValueError): rust.core_dependency_pins(bad_config)
 
@@ -180,22 +180,22 @@ class RustProfileTests(unittest.TestCase):
         revision = 'b06b7bac1aa121a4fee81e9fd0f79e4cf2eeeb3f'
         repo_config = config(repository='eylema-examples')
         repo_config['first_party_git_dependencies'] = {
-            'eylema-contracts': {'repository': 'https://github.com/eylema-dev/eylema', 'revision': revision}}
+            'eylema-contracts': {'repository': 'https://github.com/eyleme-dev/eyleme', 'revision': revision}}
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             (root / 'task-console').mkdir()
             (root / 'Cargo.toml').write_text(
                 '[workspace]\nmembers = ["task-console"]\nresolver = "3"\n\n'
                 '[workspace.dependencies]\n'
-                f'eylema-contracts = {{ git = "https://github.com/eylema-dev/eylema", rev = "{revision}", package = "eylema-contracts" }}\n')
+                f'eylema-contracts = {{ git = "https://github.com/eyleme-dev/eyleme", rev = "{revision}", package = "eylema-contracts" }}\n')
             package = root / 'task-console/Cargo.toml'
             package.write_text('[package]\nname = "task-console"\nversion = "0.1.0"\n'
                                'edition = "2024"\n\n[dependencies]\neylema-contracts.workspace = true\n')
-            expected = {'eylema-contracts': f'git+https://github.com/eylema-dev/eylema?rev={revision}#{revision}'}
+            expected = {'eylema-contracts': f'git+https://github.com/eyleme-dev/eyleme?rev={revision}#{revision}'}
             self.assertEqual(rust.validate_dependency_manifests(root, repo_config, rust.core_dependency_pins(repo_config)), expected)
             package.write_text(package.read_text() + '\n[dev-dependencies]\nother = "1"\n')
             with self.assertRaises(ValueError): rust.validate_dependency_manifests(root, repo_config, rust.core_dependency_pins(repo_config))
-            package.write_text(package.read_text().replace('other = "1"', f'eylema-contracts = {{ git = "https://github.com/eylema-dev/eylema", branch = "main" }}'))
+            package.write_text(package.read_text().replace('other = "1"', f'eylema-contracts = {{ git = "https://github.com/eyleme-dev/eyleme", branch = "main" }}'))
             with self.assertRaises(ValueError): rust.validate_dependency_manifests(root, repo_config, rust.core_dependency_pins(repo_config))
             package.write_text('[package]\nname = "task-console"\nversion = "0.1.0"\nedition = "2024"\n\n'
                                '[dependencies]\neylema-contracts = { workspace = true, git = "https://example.invalid/core" }\n')
@@ -228,18 +228,18 @@ class RustProfileTests(unittest.TestCase):
 
     def test_runner_fetches_only_after_validating_pins_and_before_offline_metadata(self):
         revision = 'b06b7bac1aa121a4fee81e9fd0f79e4cf2eeeb3f'
-        expected_source = f'git+https://github.com/eylema-dev/eylema?rev={revision}#{revision}'
+        expected_source = f'git+https://github.com/eyleme-dev/eyleme?rev={revision}#{revision}'
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             initialize_git(root)
             config_value = config(repository='eylema-examples')
             config_value['wasm_packages'] = []
             config_value['first_party_git_dependencies'] = {
-                'eylema-contracts': {'repository': 'https://github.com/eylema-dev/eylema', 'revision': revision}}
+                'eylema-contracts': {'repository': 'https://github.com/eyleme-dev/eyleme', 'revision': revision}}
             (root / 'repository.json').write_text(json.dumps(config_value))
             (root / 'Cargo.toml').write_text(
                 '[workspace]\nmembers = ["task-console"]\nresolver = "3"\n\n[workspace.dependencies]\n'
-                f'eylema-contracts = {{ git = "https://github.com/eylema-dev/eylema", rev = "{revision}" }}\n')
+                f'eylema-contracts = {{ git = "https://github.com/eyleme-dev/eyleme", rev = "{revision}" }}\n')
             (root / 'task-console').mkdir()
             (root / 'task-console/Cargo.toml').write_text(
                 '[package]\nname = "task-console"\nversion = "0.1.0"\nedition = "2024"\n\n'
@@ -281,13 +281,13 @@ class RustProfileTests(unittest.TestCase):
             metadata_call = next(index for index, args in enumerate(calls) if 'metadata' in args)
             self.assertLess(fetch, metadata_call)
             for override in (
-                '[patch."https://github.com/eylema-dev/eylema"]\n'
+                '[patch."https://github.com/eyleme-dev/eyleme"]\n'
                 'eylema-contracts = { git = "https://attacker.invalid/core", branch = "main" }\n',
                 '[replace]\n"eylema-contracts:0.1.0" = { git = "https://attacker.invalid/core", branch = "main" }\n',
             ):
                 (root / 'Cargo.toml').write_text(
                     '[workspace]\nmembers = ["task-console"]\nresolver = "3"\n\n[workspace.dependencies]\n'
-                    f'eylema-contracts = {{ git = "https://github.com/eylema-dev/eylema", rev = "{revision}" }}\n\n'
+                    f'eylema-contracts = {{ git = "https://github.com/eyleme-dev/eyleme", rev = "{revision}" }}\n\n'
                     + override)
                 calls.clear()
                 with contextlib.redirect_stdout(io.StringIO()), \
