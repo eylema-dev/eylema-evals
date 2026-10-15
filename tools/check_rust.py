@@ -10,9 +10,9 @@ from pathlib import Path
 
 TOOLCHAIN = '1.99.0'
 TARGET = 'wasm32-unknown-unknown'
-ROLES = {'eyleme-dev/eyleme': 'core', 'eyleme-dev/eylema-examples': 'examples', 'eyleme-dev/eylema-evals': 'evals'}
-REPOSITORIES = {'eyleme', 'devguide', '.github', 'eylema-docs-en', 'eylema-docs-tr',
-                'eylema-examples', 'eylema-evals', 'eylema-models', 'eylema-training'}
+ROLES = {'eyleme-dev/eyleme': 'core', 'eyleme-dev/eyleme-examples': 'examples', 'eyleme-dev/eyleme-evals': 'evals'}
+REPOSITORIES = {'eyleme', 'devguide', '.github', 'eyleme-docs-en', 'eyleme-docs-tr',
+                'eyleme-examples', 'eyleme-evals', 'eyleme-models', 'eyleme-training'}
 
 
 def require(condition, message):
@@ -62,7 +62,7 @@ def validate_wasm_packages(config):
 
 def core_dependency_pins(config):
     pins = config.get('first_party_git_dependencies', {})
-    if config.get('repository') != 'eyleme-dev/eylema-examples':
+    if config.get('repository') != 'eyleme-dev/eyleme-examples':
         require(pins == {}, 'First-party Git dependency exceptions belong only to examples')
         return {}
     require(config.get('role') == 'examples' and isinstance(pins, dict)

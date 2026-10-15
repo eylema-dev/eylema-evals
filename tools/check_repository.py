@@ -141,7 +141,7 @@ def validate_workflow(workflow):
     require(set(rust) == {'name', 'if', 'runs-on', 'timeout-minutes', 'steps'}, 'Unexpected Rust job configuration')
     require(rust['name'] == 'rust-checks' and rust['runs-on'] == 'macos-26' and rust['timeout-minutes'] == 20,
             'Rust CI requires bounded native ARM64 macOS runner')
-    require(rust['if'] == "github.repository == 'eyleme-dev/eyleme' || github.repository == 'eyleme-dev/eylema-examples' || github.repository == 'eyleme-dev/eylema-evals'", 'Rust job role mismatch')
+    require(rust['if'] == "github.repository == 'eyleme-dev/eyleme' || github.repository == 'eyleme-dev/eyleme-examples' || github.repository == 'eyleme-dev/eyleme-evals'", 'Rust job role mismatch')
     require(rust['steps'] == [
         {'name': 'Checkout reviewed revision', 'uses': 'actions/checkout@' + ACTIONS['actions/checkout'],
          'with': {'fetch-depth': 0, 'persist-credentials': False}},
@@ -215,9 +215,9 @@ def verify_translations(root, manifest, write=False):
 
 
 ROLES = {
-    'eyleme': 'core', 'eylema-docs-en': 'docs-en', 'eylema-docs-tr': 'docs-tr',
-    'devguide': 'guide', '.github': 'community', 'eylema-examples': 'examples',
-    'eylema-evals': 'evals', 'eylema-models': 'models', 'eylema-training': 'training',
+    'eyleme': 'core', 'eyleme-docs-en': 'docs-en', 'eyleme-docs-tr': 'docs-tr',
+    'devguide': 'guide', '.github': 'community', 'eyleme-examples': 'examples',
+    'eyleme-evals': 'evals', 'eyleme-models': 'models', 'eyleme-training': 'training',
 }
 PRODUCT_DOCS = ('architecture', 'api-reference', 'development-and-operations',
                 'learning-and-training', 'project-structure', 'roadmap')
@@ -241,7 +241,7 @@ def validate_repository_config(config):
         require(config.get('runtime_implemented') is False and config.get('gate_profile') == 'documentation-v1',
                 'Documentation profile must not claim runtime implementation')
     else:
-        require(name in {'eyleme', 'eylema-examples', 'eylema-evals'}
+        require(name in {'eyleme', 'eyleme-examples', 'eyleme-evals'}
                 and config.get('runtime_implemented') is True and config.get('gate_profile') == 'rust-v1',
                 'Implementation requires an approved Rust-capable role/profile')
     require(config.get('tooling_version') == '0.3.0', 'Unexpected tooling version')
@@ -307,7 +307,7 @@ def check(root, event=None):
     from check_rust import validate_identity
     validate_identity(root, config)
     required = ['README.md', 'AGENTS.md', 'CONTRIBUTING.md', 'CONTRIBUTING.tr.md']
-    if repository in {'eylema-docs-en', 'eylema-docs-tr'}:
+    if repository in {'eyleme-docs-en', 'eyleme-docs-tr'}:
         required += [f'docs/{d}.md' for d in PRODUCT_DOCS]
     else:
         required += ['README.tr.md']

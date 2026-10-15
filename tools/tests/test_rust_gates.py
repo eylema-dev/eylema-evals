@@ -16,7 +16,7 @@ from check_repository import (ROOT, CheckFailure, load_yaml, validate_repository
 
 
 def config(stage='implementation', repository='eyleme'):
-    roles = {'eyleme': 'core', 'eylema-examples': 'examples', 'eylema-evals': 'evals', 'eylema-models': 'models'}
+    roles = {'eyleme': 'core', 'eyleme-examples': 'examples', 'eyleme-evals': 'evals', 'eyleme-models': 'models'}
     return {'format_version': 1, 'repository': 'eyleme-dev/' + repository, 'role': roles[repository],
             'stage': stage, 'runtime_implemented': stage == 'implementation', 'tooling_version': '0.3.0',
             'gate_profile': 'rust-v1' if stage == 'implementation' else 'documentation-v1',
@@ -42,10 +42,30 @@ def fixture(root):
 
 
 class RustProfileTests(unittest.TestCase):
+    def test_renamed_children_require_exact_current_ci_and_remote_identities(self):
+        roles = {'docs-en': 'docs-en', 'docs-tr': 'docs-tr', 'examples': 'examples',
+                 'evals': 'evals', 'models': 'models', 'training': 'training'}
+        for suffix, role in roles.items():
+            identity = 'eyleme-dev/eyleme-' + suffix
+            declared = dict(config('documentation'), repository=identity, role=role)
+            self.assertEqual(validate_repository_config(declared), 'eyleme-' + suffix)
+            with tempfile.TemporaryDirectory() as temp, patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': identity}, clear=True):
+                root = Path(temp)
+                with patch('check_rust.subprocess.run', return_value=subprocess.CompletedProcess([], 0, 'https://github.com/' + identity + '.git', '')):
+                    rust.validate_identity(root, declared)
+                old = identity.replace('/eyleme-', '/eylema-')
+                with self.assertRaises(CheckFailure):
+                    validate_repository_config(dict(declared, repository=old))
+                with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': old}, clear=True):
+                    with self.assertRaises(ValueError): rust.validate_identity(root, declared)
+                for remote in ('https://github.com/' + old + '.git', 'https://github.com/other/' + identity.split('/')[1] + '.git'):
+                    with patch('check_rust.subprocess.run', return_value=subprocess.CompletedProcess([], 0, remote, '')):
+                        with self.assertRaises(ValueError): rust.validate_identity(root, declared)
+
     def test_only_reviewed_roles_can_enter_implementation(self):
-        for name in ('eyleme', 'eylema-examples', 'eylema-evals'):
+        for name in ('eyleme', 'eyleme-examples', 'eyleme-evals'):
             self.assertEqual(validate_repository_config(config(repository=name)), name)
-        for value in (config(repository='eylema-models'), dict(config(), gate_profile='trust-me'),
+        for value in (config(repository='eyleme-models'), dict(config(), gate_profile='trust-me'),
                       dict(config('documentation'), runtime_implemented=True)):
             with self.assertRaises(CheckFailure): validate_repository_config(value)
 
@@ -54,8 +74,8 @@ class RustProfileTests(unittest.TestCase):
             root = Path(temp); initialize_git(root)
             with patch.dict('check_rust.os.environ', {}, clear=True):
                 rust.validate_identity(root, config())
-                with self.assertRaises(ValueError): rust.validate_identity(root, config(repository='eylema-examples'))
-            with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eyleme-dev/eylema-training'}, clear=True):
+                with self.assertRaises(ValueError): rust.validate_identity(root, config(repository='eyleme-examples'))
+            with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eyleme-dev/eyleme-training'}, clear=True):
                 with self.assertRaises(ValueError): rust.validate_identity(root, config())
             with patch.dict('check_rust.os.environ', {'GITHUB_REPOSITORY': 'eyleme-dev/eyleme'}, clear=True):
                 rust.validate_identity(root, config())
@@ -68,7 +88,7 @@ class RustProfileTests(unittest.TestCase):
                 with self.assertRaises(subprocess.CalledProcessError): rust.validate_identity(root, config())
                 subprocess.run(['git', '-C', str(root), 'remote', 'add', 'upstream', 'https://github.com/eyleme-dev/eyleme.git'], check=True)
                 rust.validate_identity(root, config())
-                with self.assertRaises(ValueError): rust.validate_identity(root, config(repository='eylema-examples'))
+                with self.assertRaises(ValueError): rust.validate_identity(root, config(repository='eyleme-examples'))
                 subprocess.run(['git', '-C', str(root), 'remote', 'set-url', 'upstream', 'https://github.com/other/eylema.git'], check=True)
                 with self.assertRaises(ValueError): rust.validate_identity(root, config())
 
@@ -105,7 +125,7 @@ class RustProfileTests(unittest.TestCase):
         validate_schema_ownership('eyleme', required + ['ai-team-protocol/task.schema.json'])
         for repo, schemas in [('eyleme', required[:1]), ('eyleme', required + ['docs/foreign.schema.json']),
                               ('eyleme', required + ['ai-team-protocol/../escape.schema.json']),
-                              ('eylema-models', required), ('devguide', required)]:
+                              ('eyleme-models', required), ('devguide', required)]:
             with self.assertRaises(CheckFailure): validate_schema_ownership(repo, schemas)
 
     def test_wasm_selection_is_explicit_and_bound_to_owned_libraries(self):
@@ -119,7 +139,7 @@ class RustProfileTests(unittest.TestCase):
             with self.assertRaises(ValueError): rust.validate_metadata(root, metadata, ['absent'])
             metadata['packages'][0]['targets'] = [{'kind': ['bin']}]
             with self.assertRaises(ValueError): rust.validate_metadata(root, metadata, ['owned'])
-            self.assertEqual(rust.validate_wasm_packages(dict(config(repository='eylema-evals'), wasm_packages=[])), [])
+            self.assertEqual(rust.validate_wasm_packages(dict(config(repository='eyleme-evals'), wasm_packages=[])), [])
 
     def test_runtime_job_cannot_be_missing_skipped_or_privileged(self):
         original = load_yaml(ROOT / '.github/workflows/ci.yml')
@@ -148,7 +168,7 @@ class RustProfileTests(unittest.TestCase):
 
     def test_examples_may_use_only_the_exact_first_party_core_contract(self):
         revision = 'b06b7bac1aa121a4fee81e9fd0f79e4cf2eeeb3f'
-        config_value = config(repository='eylema-examples')
+        config_value = config(repository='eyleme-examples')
         config_value['wasm_packages'] = []
         config_value['first_party_git_dependencies'] = {
             'eylema-contracts': {'repository': 'https://github.com/eyleme-dev/eyleme', 'revision': revision}}
@@ -178,7 +198,7 @@ class RustProfileTests(unittest.TestCase):
 
     def test_examples_dependency_manifest_requires_immutable_core_git_revision(self):
         revision = 'b06b7bac1aa121a4fee81e9fd0f79e4cf2eeeb3f'
-        repo_config = config(repository='eylema-examples')
+        repo_config = config(repository='eyleme-examples')
         repo_config['first_party_git_dependencies'] = {
             'eylema-contracts': {'repository': 'https://github.com/eyleme-dev/eyleme', 'revision': revision}}
         with tempfile.TemporaryDirectory() as temp:
@@ -232,7 +252,7 @@ class RustProfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             initialize_git(root)
-            config_value = config(repository='eylema-examples')
+            config_value = config(repository='eyleme-examples')
             config_value['wasm_packages'] = []
             config_value['first_party_git_dependencies'] = {
                 'eylema-contracts': {'repository': 'https://github.com/eyleme-dev/eyleme', 'revision': revision}}

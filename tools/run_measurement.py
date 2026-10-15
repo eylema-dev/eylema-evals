@@ -251,7 +251,7 @@ def host_environment():
 
 
 def tool_source(evals_root):
-    return {'repository': 'eyleme-dev/eylema-evals',
+    return {'repository': 'eyleme-dev/eyleme-evals',
             'revision': git_value(evals_root, 'rev-parse', 'HEAD'),
             'tree': git_value(evals_root, 'rev-parse', 'HEAD^{tree}')}
 
