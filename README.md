@@ -1,6 +1,10 @@
 # Eyleme evaluations
 
-**Name update — 14 October 2026:** The product is **Eyleme** (formerly Eylema); the companion product is **Derleme** (formerly Derlema), and **Onama** keeps its name. The GitHub organization is now `eyleme-dev` (formerly `eylema-dev`). The main repository is now `eyleme-dev/eyleme`. On 15 October 2026 the six `eylema-*` child repositories became `eyleme-*`. Domains, commands, crate/package names, environment variables, data paths and protocol/schema identifiers retain their current spelling for compatibility. Historical evidence preserves its original names and URLs.
+**One Eyleme brand — 15 October 2026:** [eyleme.dev](https://eyleme.dev/) is the shared home for Eyleme and its community. Eyleme remains a standalone, public Apache-2.0 project. **Eyleme Derleme** and **Eyleme Onama** follow a private-source, paid subscription model as optional products. Commercial services and terms are in development; pricing and availability are unpublished. This repository does not provide a subscription service.
+
+The family is presented as **Derleme → Onama → Eyleme**: prepare data, authorize work, then execute. Eyleme keeps its own basic access controls and does not require either subscription for independent use. See the [public product-family overview](https://github.com/eyleme-dev/eyleme/blob/main/docs/en/product-family.md).
+
+Technical identifiers retain their existing spelling for compatibility. Historical evidence preserves its original names and URLs.
 
 Behavioral, performance and hardware evaluation. [Türkçe](README.tr.md).
 
