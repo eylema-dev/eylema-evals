@@ -53,7 +53,7 @@ jobs:
         run: .venv/bin/python tools/check_workspace.py --fetch
   rust-checks:
     name: rust-checks
-    if: github.repository == 'eyleme-dev/eyleme' || github.repository == 'eyleme-dev/eylema-examples' || github.repository == 'eyleme-dev/eylema-evals'
+    if: github.repository == 'eyleme-dev/eyleme' || github.repository == 'eyleme-dev/eyleme-examples' || github.repository == 'eyleme-dev/eyleme-evals'
     runs-on: macos-26
     timeout-minutes: 20
     steps:
