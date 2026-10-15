@@ -5,14 +5,14 @@
     {
       "en": "README.md",
       "tr": "README.tr.md",
-      "en_sha256": "4edce82cddbdd6feb96a917bf65e569b89f2d5719eed99a8643b48c30e65f16f",
-      "tr_sha256": "4e83e7d8b98d27266ddc5ed5aad7730d00e988215a4b7be781ee1af6a8d13fca"
+      "en_sha256": "90de9c361d5ef3d37adef6b69f443d011a08cc14bb5f293c866313819e995ab4",
+      "tr_sha256": "4bc91512246fc69b9660a0142581a559e2962781648f3c40bddc36aa0fc2f52e"
     },
     {
       "en": "CONTRIBUTING.md",
       "tr": "CONTRIBUTING.tr.md",
-      "en_sha256": "fe3e0d2499104e7ae2159f325e24a4c2bd28e325314844495622959701c8aff5",
-      "tr_sha256": "71f0b633cfca2eda1705db9732ee2da3c85bebc70d2f220288b29c65be8e4fb1"
+      "en_sha256": "b8505ae6d17b20ec94a2bb598a0618c4a2b36d6fbde6e076b8793e386c8b159d",
+      "tr_sha256": "b606757a8fca34812d4635fb3b0bdf86759fdefff9f30846d2a215c8d22081d3"
     }
   ],
   "documents": []
